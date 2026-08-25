@@ -371,7 +371,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <a href="#hero" className="flex items-center gap-2 text-xl font-bold text-primary-700">
-            <img src="/logo.png" alt="REAL HOME LENS" className="h-9 w-9 object-contain" />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-9 w-9 object-contain" />
             <span>REAL HOME LENS</span>
           </a>
 
@@ -1000,7 +1000,7 @@ export default function Landing() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 text-xl font-bold text-white">
-                <img src="/logo.png" alt="REAL HOME LENS" className="h-8 w-8 object-contain" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-8 w-8 object-contain" />
                 <span>REAL HOME LENS</span>
               </div>
               <p className="mt-4 text-sm leading-relaxed">

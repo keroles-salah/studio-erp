@@ -113,7 +113,7 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
     },
     studio: {
       name: settings?.['studio.name'] || 'REAL HOME LENS',
-      logo: settings?.['studio.logo'] || '/logo.png',
+      logo: settings?.['studio.logo'] || `${import.meta.env.BASE_URL}logo.png`,
       phone: settings?.['studio.phone'] || '+966 50 000 0000',
       whatsapp: settings?.['studio.whatsapp'] || '+966 50 000 0000',
       email: settings?.['studio.email'] || 'info@realhomelens.com',
@@ -393,7 +393,7 @@ export default function InvoiceDetail() {
             {/* 2. Studio Identity & English Brand (Left in RTL) */}
             <div className="flex items-start gap-3 text-start" dir="ltr">
               <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-slate-100 bg-white p-1.5 shadow-sm">
-                <img src={data.studio.logo || '/logo.png'} alt="Logo" className="h-11 w-11 object-contain" />
+                <img src={data.studio.logo || `${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="h-11 w-11 object-contain" />
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
