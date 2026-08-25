@@ -313,10 +313,6 @@ export default function Bookings() {
           { key: 'ALL', label: 'الكل' },
           { key: 'TODAY', label: 'حجوزات اليوم' },
           { key: 'THIS_WEEK', label: 'هذا الأسبوع' },
-          { key: 'PENDING', label: 'قيد الانتظار' },
-          { key: 'CONFIRMED', label: 'مؤكدة' },
-          { key: 'IN_PROGRESS', label: 'قيد التنفيذ' },
-          { key: 'COMPLETED', label: 'مكتملة' },
         ].map((pill) => (
           <button
             key={pill.key}
@@ -465,14 +461,13 @@ export default function Bookings() {
       )}
 
       <div className="card p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="relative"><Search className="absolute top-1/2 -translate-y-1/2 start-3 w-5 h-5 text-slate-400" /><input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="input ps-10" placeholder={t('common.search')} /></div>
-          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="input">
-            <option value="">{t('common.all')} — {t('common.status')}</option>
-            {['DRAFT','PENDING','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED'].map(s => <option key={s} value={s}>{getBookingStatusLabel(s)}</option>)}
-          </select>
-          <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(1); }} className="input" />
-          <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setPage(1); }} className="input" />
+          <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(1); }} className="input" placeholder="من تاريخ" />
+          <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setPage(1); }} className="input" placeholder="إلى تاريخ" />
+          <div className="flex items-center text-sm text-slate-500">
+            {t('common.total')}: <span className="font-semibold text-slate-700 ms-1">{data?.total || 0}</span>
+          </div>
         </div>
         {isLoading ? (<div className="text-center py-12 text-slate-400">{t('common.loading')}</div>) : bookings.length === 0 ? (
           <div className="text-center py-12 text-slate-400"><AlertCircle className="w-10 h-10 mx-auto mb-2 opacity-50" /><p>{t('common.noData')}</p></div>
@@ -483,74 +478,23 @@ export default function Bookings() {
                 <th className="px-4 py-3 text-start font-medium">{t('booking.number')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('common.customer')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('booking.eventDate')}</th>
-                <th className="px-4 py-3 text-start font-medium">{t('common.status')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('common.total')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('common.paid')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('common.remaining')}</th>
-                <th className="px-4 py-3 text-center font-medium">إجراءات سريعة</th>
+                <th className="px-4 py-3 text-center font-medium">عرض</th>
               </tr></thead>
               <tbody>{bookings.map(b => (
                 <tr key={b.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3"><Link to={`/bookings/${b.id}`} className="font-medium text-primary-600 hover:underline">{b.bookingNumber}</Link></td>
                   <td className="px-4 py-3 text-slate-700">{b.customerName}</td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(b.eventDate)}</td>
-                  <td className="px-4 py-3">
-                    <span className={getBookingStatusColor(b.status)}>{getBookingStatusLabel(b.status)}</span>
-                  </td>
                   <td className="px-4 py-3 text-end font-medium">{formatCurrency(b.total)}</td>
                   <td className="px-4 py-3 text-end text-emerald-600">{formatCurrency(b.paid)}</td>
                   <td className="px-4 py-3 text-end text-red-600">{formatCurrency(b.total - b.paid)}</td>
                   <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {/* Quick Status Buttons */}
-                      {b.status === 'PENDING' && (
-                        <button
-                          type="button"
-                          onClick={() => updateStatusMutation.mutate({ id: b.id, newStatus: 'CONFIRMED' })}
-                          title="تأكيد الحجز"
-                          className="rounded-lg bg-emerald-50 p-1.5 text-emerald-700 hover:bg-emerald-100 transition"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      {b.status === 'CONFIRMED' && (
-                        <button
-                          type="button"
-                          onClick={() => updateStatusMutation.mutate({ id: b.id, newStatus: 'IN_PROGRESS' })}
-                          title="بدء التنفيذ"
-                          className="rounded-lg bg-primary-50 p-1.5 text-primary-700 hover:bg-primary-100 transition"
-                        >
-                          <PlayCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                      {b.status === 'IN_PROGRESS' && (
-                        <button
-                          type="button"
-                          onClick={() => updateStatusMutation.mutate({ id: b.id, newStatus: 'COMPLETED' })}
-                          title="إتمام الحجز"
-                          className="rounded-lg bg-emerald-50 p-1.5 text-emerald-700 hover:bg-emerald-100 transition"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      {b.status !== 'CANCELLED' && b.status !== 'COMPLETED' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) {
-                              updateStatusMutation.mutate({ id: b.id, newStatus: 'CANCELLED' });
-                            }
-                          }}
-                          title="إلغاء الحجز"
-                          className="rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-100 transition"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                      <Link to={`/bookings/${b.id}`} className="btn-ghost p-1.5 inline-flex" title="عرض التفاصيل">
-                        <Eye className="w-4 h-4" />
-                      </Link>
-                    </div>
+                    <Link to={`/bookings/${b.id}`} className="btn-ghost p-1.5 inline-flex" title="عرض التفاصيل">
+                      <Eye className="w-4 h-4" />
+                    </Link>
                   </td>
                 </tr>
               ))}</tbody>

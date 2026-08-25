@@ -118,7 +118,6 @@ export default function BookingDetail() {
           <span className="text-slate-300">/</span>
           <span className="font-medium text-slate-700">{data.bookingNumber}</span>
         </div>
-        <span className={getBookingStatusColor(data.status)}>{getBookingStatusLabel(data.status)}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
