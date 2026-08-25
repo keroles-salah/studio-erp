@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Database & SQLite
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+dev.db
+backend/dev.db
+backend/dev.db-journal
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.db.bak*
+*dev.db.bak*
+
+# Backups & Temp files
+*.bak
+*.bak-*
+*.bak.*
+*.dead*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+backend/uploads/
+
+# Testing
+coverage/
+
+# Misc
+.cache/
+.temp/
