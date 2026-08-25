@@ -60,7 +60,7 @@ export default function Login({ onLogin }: LoginProps) {
             <div className="absolute -bottom-10 -end-10 h-52 w-52 rounded-full border border-primary-300/10" />
             <div>
               <div className="mb-16 flex items-center gap-3">
-                <img src="/logo.png" alt="REAL HOME LENS" className="h-11 w-11 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-11 w-11 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]" />
                 <div>
                   <p className="font-bold tracking-tight">REAL HOME LENS</p>
                   <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-400">نظام الإدارة</p>
@@ -104,7 +104,7 @@ export default function Login({ onLogin }: LoginProps) {
             </button>
 
             <div className="mb-10 lg:mt-8">
-              <img src="/logo.png" alt="REAL HOME LENS" className="mb-5 h-12 w-12 object-contain lg:hidden" />
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="mb-5 h-12 w-12 object-contain lg:hidden" />
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary-600">مرحباً بعودتك</p>
               <h2 className="text-3xl font-bold tracking-tight text-slate-950">{t('auth.login')}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">سجّل دخولك للوصول إلى مساحة العمل الخاصة بك.</p>
