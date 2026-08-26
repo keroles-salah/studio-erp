@@ -1,7 +1,17 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "frontend/dist",
+  "installCommand": "npm install && cd frontend && npm install",
+  "buildCommand": "npx prisma generate --schema backend/prisma/schema.postgresql.prisma && cd frontend && npm run build",
   "rewrites": [
+    {
+      "source": "/api/v1/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
