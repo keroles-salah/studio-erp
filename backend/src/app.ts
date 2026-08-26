@@ -36,6 +36,9 @@ import publicRoutes from './modules/public/public.routes';
 
 const app = express();
 
+// Behind Render/reverse proxy: needed for correct client IPs + rate limiting
+app.set('trust proxy', 1);
+
 // ---- Security ----
 app.use(helmet());
 app.use(corsMiddleware);

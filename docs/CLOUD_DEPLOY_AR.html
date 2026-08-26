@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio ERP — نشر سحابي على Supabase + Render</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --card:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --blue:#38bdf8; --green:#34d399;
+    --amber:#fbbf24; --red:#f87171; --violet:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.85;padding:32px 16px}
+  .wrap{max-width:980px;margin:0 auto}
+  header{margin-bottom:28px}
+  header h1{font-size:1.7rem;color:#fff;margin-bottom:6px}
+  header p{color:var(--muted)}
+  .badge{display:inline-block;padding:2px 12px;border-radius:999px;font-size:.75rem;font-weight:600;margin-inline-start:6px}
+  .b-blue{background:rgba(56,189,248,.15);color:var(--blue)}
+  .b-green{background:rgba(52,211,153,.15);color:var(--green)}
+  .b-amber{background:rgba(251,191,36,.15);color:var(--amber)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:20px}
+  .panel h2{font-size:1.15rem;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;font-weight:800;flex:none}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.92rem}
+  th,td{padding:9px 12px;border:1px solid var(--line);text-align:right;vertical-align:top}
+  th{background:#1a2437;color:var(--blue);font-weight:700}
+  td code, li code, p code{background:#111c31;border:1px solid var(--line);padding:1px 7px;border-radius:6px;color:#93c5fd;font-family:Consolas,monospace;font-size:.86em;direction:ltr;display:inline-block}
+  pre{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;direction:ltr;text-align:left;margin:10px 0}
+  pre code{color:#a5f3fc;font-family:Consolas,monospace;font-size:.85rem;line-height:1.7;background:none;border:none;padding:0}
+  .warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);border-right:4px solid var(--amber);border-radius:10px;padding:12px 16px;margin:12px 0}
+  .warn b{color:var(--amber)}
+  .ok{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.35);border-right:4px solid var(--green);border-radius:10px;padding:12px 16px;margin:12px 0}
+  .ok b{color:var(--green)}
+  .danger{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.35);border-right:4px solid var(--red);border-radius:10px;padding:12px 16px;margin:12px 0}
+  .danger b{color:var(--red)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:14px 0}
+  .metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:center}
+  .metric .v{font-size:1.5rem;font-weight:800;color:#fff}
+  .metric .l{color:var(--muted);font-size:.8rem;margin-top:2px}
+  ol.steps{padding-inline-start:22px}
+  ol.steps li{margin-bottom:8px}
+  ul.check{list-style:none;padding:0}
+  ul.check li{padding-inline-start:28px;position:relative;margin-bottom:6px}
+  ul.check li::before{content:"✓";position:absolute;inset-inline-start:0;color:var(--green);font-weight:800}
+  a{color:var(--blue)}
+  .footer{color:var(--muted);text-align:center;font-size:.8rem;margin-top:26px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:center;margin:16px 0}
+  .node{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:.88rem;font-weight:600}
+  .arrow{color:var(--blue);font-size:1.2rem;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Studio ERP — تشغيل المشروع من أي جهاز <span class="badge b-blue">دليل عملي</span></h1>
+  <p>React/Vite على Vercel ⚡ Express+Prisma على Render 🟩 PostgreSQL على Supabase 🗄️</p>
+</header>
+
+<div class="panel">
+  <h2><span class="num">؟</span> ليه دلوقتي مش بيشتغل من غير جهازك؟</h2>
+  <table>
+    <tr><th>المكوّن</th><th>وضعه الآن</th><th>المشكلة</th></tr>
+    <tr><td>Frontend (Vercel)</td><td><span class="badge b-green">منشور ✓</span></td><td>بينادي على <code>localhost:3000</code> — أي جهاز تاني مش هيلاقي السيرفر</td></tr>
+    <tr><td>Backend API</td><td><span class="badge b-amber">على جهازك فقط</span></td><td>Vercel static مش بتشغّل Node servers</td></tr>
+    <tr><td>Database</td><td><span class="badge b-amber">SQLite محلي</span></td><td>ملف <code>dev.db</code> مقيد بالجهاز</td></tr>
+  </table>
+  <div class="flow">
+    <div class="node">📱 أي جهاز</div><div class="arrow">←</div>
+    <div class="node">Vercel (Frontend)</div><div class="arrow">←</div>
+    <div class="node">Render (Backend API)</div><div class="arrow">←</div>
+    <div class="node">Supabase (PostgreSQL)</div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2><span class="num">1</span> قاعدة البيانات — Supabase (مجاني)</h2>
+  <ol class="steps">
+    <li><a href="https://supabase.com">supabase.com</a> → New project باسم <code>studio-erp</code> — Region: Frankfurt.</li>
+    <li>احفظ <b>Database Password</b> فوراً (مش هيظهر تاني).</li>
+    <li>Settings → Database → Connection string (URI). الاستضافة بتبقى بالشكل ده:</li>
+  </ol>
+<pre><code>postgresql://postgres:[PASSWORD]@db.&lt;PROJECT-REF&gt;.supabase.co:5432/postgres</code></pre>
+  <div class="warn"><b>⚠️ مهم:</b> استخدم port مباشر <code>5432</code>. لو المشروع جديد وport 5432 المقفول، استخدم Session mode pooler بنفس الـ port 5432 — وتجنّب Transaction pooler (6543) مع Prisma migrations.</div>
+</div>
+
+<div class="panel">
+  <h2><span class="num">2</span> إنشاء الجداول في Supabase</h2>
+<p>من مجلد <code>backend</code> على جهازك:</p>
+<pre><code>$env:DATABASE_URL = "postgresql://postgres:&lt;PASSWORD&gt;@db.&lt;PROJECT-REF&gt;.supabase.co:5432/postgres"
+npx prisma db push --schema prisma/schema.postgresql.prisma
+npx prisma generate --schema prisma/schema.postgresql.prisma</code></pre>
+<div class="ok"><b>✓ ملحوظة:</b> المشروع فيه أصلاً ملف <code>schema.postgresql.prisma</code> جاهز للإنتاج — الـ Dockerfile بيعتمد عليه.</div>
+</div>
+
+<div class="panel">
+  <h2><span class="num">3</span> ترحيل البيانات المحلية (SQLite ← Postgres)</h2>
+  <p>سكريبت جاهز اتضاف في المشروع: <code>database/migrate_sqlite_to_pg.py</code></p>
+  <ul class="check">
+    <liيقرأ الجداول والأعمدة من <code>dev.db</code> تلقائياً (بدون تخمين أسماء)</li>
+    <li>يحوّل التواريخ epoch-ms لصيغة Postgres</li>
+    <li>يتعامل مع أعمدة JSON (<code>settings.value</code>, <code>notifications.data</code>) صح</li>
+    <li>يطبع تقرير مقارنة عدد الصفوف بعد الترحيل</li>
+  </ul>
+<pre><code>&amp; "C:\Users\ke_ro\AppData\Local\Programs\Python\Python313\python.exe" -m pip install psycopg2-binary
+# افتح الملف واملأ PG = {...} بمعلومات Supabase الأول، بعدين:
+&amp; "C:\Users\ke_ro\AppData\Local\Programs\Python\Python313\python.exe" database\migrate_sqlite_to_pg.py</code></pre>
+  <div class="grid">
+    <div class="metric"><div class="v">26</div><div class="l">جدول للترحيل</div></div>
+    <div class="metric"><div class="v">175</div><div class="l">ربط Role↔Permission</div></div>
+    <div class="metric"><div class="v">3 / 3</div><div class="l">Users / Customers</div></div>
+    <div class="metric"><div class="v">10 / 2</div><div class="l">Leads / Bookings</div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2><span class="num">4</span> نشر Backend على Render (مجاني)</h2>
+  <ol class="steps">
+    <li><a href="https://render.com">render.com</a> بحساب GitHub → New → Web Service.</li>
+    <li>اختر الريبو <code>keroles-salah/studio-erp</code>.</li>
+  </ol>
+  <table>
+    <tr><th>الحقل</th><th>القيمة</th></tr>
+    <tr><td>Root Directory</td><td><code>backend</code></td></tr>
+    <tr><td>Runtime</td><td>Docker — بيستخدم <code>backend/Dockerfile</code> الموجود (بيعمل prisma generate + build لوحده)</td></tr>
+    <tr><td>Instance</td><td>Free</td></tr>
+  </table>
+  <p><b>Environment Variables:</b></p>
+  <table>
+    <tr><th>Key</th><th>Value</th></tr>
+    <tr><td><code>DATABASE_URL</code></td><td>رابط Supabase من خطوة 1</td></tr>
+    <tr><td><code>JWT_SECRET</code></td><td>نص عشوائي طويل</td></tr>
+    <tr><td><code>JWT_REFRESH_SECRET</code></td><td>نص عشوائي مختلف</td></tr>
+    <tr><td><code>NODE_ENV</code></td><td><code>production</code></td></tr>
+  </table>
+  <p>بعد النشر هتاخد رابط زي <code>https://studio-erp-backend-xxxx.onrender.com</code> — جرّب <code>/health</code> لازم يرجع JSON ✅</p>
+</div>
+
+<div class="panel">
+  <h2><span class="num">5</span> تحديث Vercel</h2>
+  <ol class="steps">
+    <li>Settings → Environment Variables:</li>
+  </ol>
+<pre><code>VITE_API_URL = https://&lt;backend-url&gt;/api/v1</code></pre>
+  <ol class="steps" start="2">
+    <li>Deployments → Redeploy.</li>
+  </ol>
+  <div class="danger"><b>🔴 HTTPS إجباري:</b> فرونت على <code>https://vercel.app</code> مينفعش ينادي backend على <code>http://</code> — المتصفح بيمنع Mixed Content. رابط Render بيجي HTTPS جاهز فالحل سليم.</div>
+</div>
+
+<div class="panel">
+  <h2><span class="num">6</span> التحقق النهائي</h2>
+  <ul class="check">
+    <li><code>/health</code> يرجع OK</li>
+    <li>تسجيل دخول من جهاز مختلف شغال</li>
+    <li>booking تجريبي من جهاز تاني يظهر في Supabase Table Editor</li>
+    <li>CORS حالياً مفتوح لأي origin — للإنتاج حدّد دومينات مسموحة في <code>backend/src/common/cors.ts</code></li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h2><span class="num">!</span> حدود الخطة المجانية</h2>
+  <table>
+    <tr><th>الخدمة</th><th>الحد</th></tr>
+    <tr><td>Render Free</td><td>السيرفر ينام بعد 15 دقيقة سكون — أول request بعدها بياخد ~50 ثانية. حل دائم: Starter بـ $7/شهر</td></tr>
+    <tr><td>Supabase Free</td><td>500MB — أكثر من كفاية لنظام ستوديو. مشروع بدون نشاط 7 أيام ممكن يتوقف مؤقتاً</td></tr>
+  </table>
+</div>
+
+<div class="footer">اتعمل 2026-08-26 · Studio ERP · المرافق: database/migrate_sqlite_to_pg.py + docs/CLOUD_DEPLOY_AR.md</div>
+</div>
+</body>
+</html>

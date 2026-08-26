@@ -1,0 +1,24 @@
+# Render Blueprint — Studio ERP Backend
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo -> Apply
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: studio-erp-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # you will paste your Supabase pooler URL in the dashboard
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false # optional; CORS currently allows any origin
