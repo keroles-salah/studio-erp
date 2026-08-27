@@ -71,11 +71,33 @@ export class CustomersService {
       prisma.customer.count({ where }),
     ]);
 
-    const items = rawItems.map((c) => ({
-      ...c,
-      totalBookings: c._count?.bookings ?? 0,
-      totalInvoices: c._count?.invoices ?? 0,
-    }));
+    // Aggregate real financials (invoice sums) for exactly these customers
+    const customerIds = rawItems.map((c) => c.id);
+    const invoiceSums =
+      customerIds.length > 0
+        ? await prisma.invoice.groupBy({
+            by: ['customerId'],
+            where: { customerId: { in: customerIds }, deletedAt: null },
+            _sum: { total: true, paidAmount: true },
+          })
+        : [];
+    const sumsById = new Map(
+      invoiceSums.map((row) => [row.customerId, row._sum]),
+    );
+
+    const items = rawItems.map((c) => {
+      const sum = sumsById.get(c.id);
+      const totalSpending = Number(sum?.total ?? 0);
+      const totalPaid = Number(sum?.paidAmount ?? 0);
+      return {
+        ...c,
+        totalBookings: c._count?.bookings ?? 0,
+        totalInvoices: c._count?.invoices ?? 0,
+        totalSpending,
+        totalPaid,
+        outstanding: Math.max(0, totalSpending - totalPaid),
+      };
+    });
 
     return { items, total, page, limit };
   }

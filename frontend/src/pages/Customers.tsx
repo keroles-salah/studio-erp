@@ -7,7 +7,7 @@ import {
   Phone, Mail, AlertCircle, X,
 } from 'lucide-react';
 import api from '../lib/api';
-import { formatCurrency, getCustomerStatusLabel, getInitials, getLeadSourceLabel } from '../lib/utils';
+import { formatCurrency, getInitials, getLeadSourceLabel } from '../lib/utils';
 
 interface Customer {
   id: string;
@@ -17,8 +17,8 @@ interface Customer {
   source: string;
   status: string;
   totalBookings: number;
-  totalSpending: number;
-  outstanding: number;
+  totalSpending?: number;
+  outstanding?: number;
 }
 
 interface PaginatedResponse {
@@ -32,16 +32,15 @@ export default function Customers() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['customers', { page, search, status }],
+    queryKey: ['customers', { page, search }],
     queryFn: async () => {
-      const res = await api.get('/customers', { params: { page, search, status } });
+      const res = await api.get('/customers', { params: { page, search } });
       const { items, total, page: currentPage, limit } = res.data.data;
       const mapped: Customer[] = (items || []).map((c: any) => ({
         id: c.id,
@@ -61,7 +60,6 @@ export default function Customers() {
   const customers = data?.data || [];
   const totalPages = data?.totalPages || 1;
 
-  const statuses = useMemo(() => ['LEAD', 'ACTIVE', 'PREVIOUS_CUSTOMER', 'VIP', 'INACTIVE'], []);
 
   const openCreate = () => {
     setErrorMsg('');
@@ -116,10 +114,6 @@ export default function Customers() {
               placeholder={t('common.search')}
             />
           </div>
-          <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="input">
-            <option value="">{t('common.all')} — {t('common.status')}</option>
-            {statuses.map((s) => <option key={s} value={s}>{getCustomerStatusLabel(s)}</option>)}
-          </select>
           <div className="flex items-center text-sm text-slate-500">
             {t('common.total')}: <span className="font-semibold text-slate-700 ms-1">{data?.total || 0}</span>
           </div>
@@ -135,7 +129,6 @@ export default function Customers() {
                 <th className="px-4 py-3 text-start font-medium">{t('customer.name')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('customer.phone')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('customer.email')}</th>
-                <th className="px-4 py-3 text-start font-medium">{t('common.status')}</th>
                 <th className="px-4 py-3 text-center font-medium">{t('customer.totalBookings')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('customer.totalSpending')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('customer.outstanding')}</th>
@@ -153,7 +146,7 @@ export default function Customers() {
                 ))
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     {t('common.noData')}
                   </td>
@@ -183,18 +176,12 @@ export default function Customers() {
                         {c.email}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={
-                        c.status === 'VIP' ? 'badge-info'
-                        : c.status === 'ACTIVE' ? 'badge-success'
-                        : c.status === 'PREVIOUS_CUSTOMER' ? 'badge-neutral'
-                        : 'badge-neutral'
-                      }>{getCustomerStatusLabel(c.status)}</span>
-                    </td>
                     <td className="px-4 py-3 text-center text-slate-700">{c.totalBookings}</td>
-                    <td className="px-4 py-3 text-end font-medium text-slate-700">{formatCurrency(c.totalSpending)}</td>
+                    <td className="px-4 py-3 text-end font-medium text-slate-700">
+                      {c.totalSpending ? formatCurrency(c.totalSpending) : '-'}
+                    </td>
                     <td className="px-4 py-3 text-end">
-                      {c.outstanding > 0 ? (
+                      {c.outstanding !== undefined && c.outstanding > 0 ? (
                         <span className="font-medium text-red-600">{formatCurrency(c.outstanding)}</span>
                       ) : (
                         <span className="text-slate-400">—</span>
