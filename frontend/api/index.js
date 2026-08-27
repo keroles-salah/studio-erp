@@ -1,3 +1,4 @@
-const app = require("./_bundle");
+const app = require("./_bundle.cjs");
+const m = app.default || app;
 
-module.exports = app;
+module.exports = m;

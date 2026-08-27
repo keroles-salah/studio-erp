@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx prisma generate --schema backend-src/prisma/schema.postgresql.prisma && npm run build && npx esbuild backend-src/src/app.ts --bundle --platform=node --target=node20 --outfile=api/_bundle.js --external:@prisma/client --log-level=error",
+  "buildCommand": "npx prisma generate --schema backend-src/prisma/schema.postgresql.prisma && npm run build && npx esbuild backend-src/src/app.ts --bundle --platform=node --target=node20 --outfile=api/_bundle.cjs --external:@prisma/client --log-level=error",
   "rewrites": [
     {
       "source": "/api/v1/(.*)",

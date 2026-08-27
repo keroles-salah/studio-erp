@@ -55,9 +55,17 @@ if (config.isDev) {
 }
 
 // ---- Static files (uploads) ----
-const uploadsDir = path.resolve(config.storage.localPath);
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Serverless-safe: use /tmp when running on Vercel/Lambda, never crash on read-only FS.
+const isServerless = !!process.env.VERCEL;
+let uploadsDir = path.resolve(
+  isServerless ? path.join('/tmp', 'uploads') : config.storage.localPath
+);
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('uploads dir unavailable, static uploads disabled:', e instanceof Error ? e.message : e);
 }
 app.use('/uploads', express.static(uploadsDir));
 

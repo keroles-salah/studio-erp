@@ -44532,9 +44532,16 @@ if (config.isDev) {
 } else {
   app.use((0, import_morgan.default)("combined"));
 }
-var uploadsDir = import_path2.default.resolve(config.storage.localPath);
-if (!import_fs2.default.existsSync(uploadsDir)) {
-  import_fs2.default.mkdirSync(uploadsDir, { recursive: true });
+var isServerless = !!process.env.VERCEL;
+var uploadsDir = import_path2.default.resolve(
+  isServerless ? import_path2.default.join("/tmp", "uploads") : config.storage.localPath
+);
+try {
+  if (!import_fs2.default.existsSync(uploadsDir)) {
+    import_fs2.default.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn("uploads dir unavailable, static uploads disabled:", e instanceof Error ? e.message : e);
 }
 app.use("/uploads", import_express23.default.static(uploadsDir));
 app.use("/api", apiRateLimiter);
