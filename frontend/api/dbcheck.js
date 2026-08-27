@@ -1,4 +1,3 @@
-// dbcheck v2: raw client, only instantiate when env var present
 export default async function handler(_req, res) {
   try {
     if (!process.env.DATABASE_URL) {
@@ -6,10 +5,10 @@ export default async function handler(_req, res) {
     }
     const u = new URL(process.env.DATABASE_URL);
     const mod = await import('./_bundle_prisma_check.cjs');
-    const PrismaClient = mod.default?.PrismaClient || mod.PrismaClient;
-    const prisma = new PrismaClient({
-      datasources: { db: { url: process.env.DATABASE_URL } },
-    });
+    const prisma = mod.prisma || (mod.default && mod.default.prisma);
+    if (!prisma) {
+      return res.status(200).json({ keys: Object.keys(mod) });
+    }
     const count = await prisma.user.count();
     const admin = await prisma.user.findUnique({
       where: { email: 'admin@studio.com' },
@@ -20,7 +19,7 @@ export default async function handler(_req, res) {
       host: u.hostname,
       db: u.pathname,
       user: u.username,
-      hasPassword: !!u.password && u.password.length > 0,
+      hasPassword: !!u.password,
       passwordLen: decodeURIComponent(u.password || '').length,
       params: u.search,
       userCount: count,
