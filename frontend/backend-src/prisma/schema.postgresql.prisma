@@ -1,0 +1,602 @@
+// Studio ERP - PostgreSQL Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// AUTH & AUTHORIZATION
+// ============================================================
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  passwordHash  String
+  roleId        String
+  role          Role      @relation(fields: [roleId], references: [id])
+  status        String    @default("ACTIVE")
+  lastLoginAt   DateTime?
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  auditLogs        AuditLog[]
+  createdBookings  Booking[]           @relation("BookingCreatedBy")
+  createdInvoices  Invoice[]           @relation("InvoiceCreatedBy")
+  receivedPayments Payment[]           @relation("PaymentReceivedBy")
+  createdExpenses  Expense[]           @relation("ExpenseCreatedBy")
+  assignedLeads    Lead[]              @relation("LeadAssignedTo")
+  createdCampaigns MarketingCampaign[] @relation("CampaignCreatedBy")
+  notifications    Notification[]
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
+  @@index([roleId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id        String @id @default(uuid())
+  name      String @unique
+  module    String
+  action    String
+  roles     Role[]
+  createdAt DateTime @default(now())
+
+  @@index([module])
+  @@index([name])
+  @@map("permissions")
+}
+
+// ============================================================
+// CUSTOMERS / CRM
+// ============================================================
+
+model Customer {
+  id             String   @id @default(uuid())
+  fullName       String
+  phone          String?
+  whatsapp       String?
+  email          String?
+  address        String?
+  city           String?
+  notes          String?
+  source         String   @default("OTHER")
+  customerStatus String   @default("LEAD")
+  marketingOptIn Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  bookings             Booking[]
+  leads                Lead[]
+  invoices             Invoice[]
+  payments             Payment[]      @relation("CustomerPayments")
+  campaignRecipients   CampaignRecipient[]
+  communications       Communication[]
+  documents            CustomerDocument[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([fullName])
+  @@index([source])
+  @@index([customerStatus])
+  @@map("customers")
+}
+
+model CustomerDocument {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  fileName   String
+  filePath   String
+  fileType   String
+  fileSize   Int
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@map("customer_documents")
+}
+
+model Communication {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  channel     String
+  direction   String
+  subject     String?
+  message     String
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+  @@map("communications")
+}
+
+// ============================================================
+// LEADS
+// ============================================================
+
+model Lead {
+  id               String    @id @default(uuid())
+  name             String
+  phone            String?
+  email            String?
+  whatsapp         String?
+  source           String    @default("WEBSITE")
+  interestedService String?
+  eventDate        DateTime?
+  budget           Decimal?
+  status           String    @default("NEW")
+  notes            String?
+  assignedToId     String?
+  assignedTo       User?     @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
+  customerId       String?
+  customer         Customer? @relation(fields: [customerId], references: [id])
+  convertedAt      DateTime?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmContent       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  deletedAt     DateTime?
+
+  @@index([status])
+  @@index([source])
+  @@index([assignedToId])
+  @@index([customerId])
+  @@index([deletedAt])
+  @@map("leads")
+}
+
+// ============================================================
+// SERVICES
+// ============================================================
+
+model Service {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  category    String?
+  basePrice   Decimal
+  cost        Decimal   @default(0)
+  taxRate     Decimal   @default(15)
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  bookingServices BookingService[]
+
+  @@index([category])
+  @@index([status])
+  @@map("services")
+}
+
+// ============================================================
+// BOOKINGS & EVENTS
+// ============================================================
+
+model Booking {
+  id              String    @id @default(uuid())
+  bookingNumber   String    @unique
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  eventId         String?   @unique
+  event           Event?    @relation(fields: [eventId], references: [id])
+  status          String    @default("DRAFT")
+  subtotal        Decimal   @default(0)
+  discount        Decimal   @default(0)
+  tax             Decimal   @default(0)
+  total           Decimal   @default(0)
+  paidAmount      Decimal   @default(0)
+  remainingAmount Decimal   @default(0)
+  taxRate        Decimal   @default(15)
+  depositRequired Decimal   @default(0)
+  depositPaid     Decimal   @default(0)
+  depositDate     DateTime?
+  nextPaymentDate DateTime?
+  notes           String?
+  createdById     String
+  createdBy       User      @relation("BookingCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  services        BookingService[]
+  equipment       BookingEquipment[]
+  invoices        Invoice[]
+  payments        Payment[]
+  expenses        Expense[]
+  externalRentals ExternalRental[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([bookingNumber])
+  @@index([eventId])
+  @@map("bookings")
+}
+
+model Event {
+  id           String    @id @default(uuid())
+  bookingId    String?   @unique
+  booking      Booking?  @relation
+  eventType    String
+  eventDate    DateTime
+  startTime    DateTime?
+  endTime      DateTime?
+  venueName    String?
+  venueAddress String?
+  city         String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([eventDate])
+  @@index([eventType])
+  @@index([city])
+  @@map("events")
+}
+
+model BookingService {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  quantity    Int      @default(1)
+  unitPrice   Decimal
+  discount    Decimal  @default(0)
+  total       Decimal
+  notes       String?
+
+  @@index([bookingId])
+  @@index([serviceId])
+  @@map("booking_services")
+}
+
+// ============================================================
+// EQUIPMENT
+// ============================================================
+
+model Equipment {
+  id            String   @id @default(uuid())
+  equipmentCode String   @unique
+  name          String
+  category      String
+  brand         String?
+  model         String?
+  serialNumber  String?
+  ownershipType String   @default("OWNED")
+  purchasePrice Decimal?
+  rentalCost    Decimal?
+  rentalPrice   Decimal?
+  status        String   @default("AVAILABLE")
+  location      String?
+  notes         String?
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  bookings      BookingEquipment[]
+
+  @@index([status])
+  @@index([category])
+  @@index([serialNumber])
+  @@index([ownershipType])
+  @@map("equipment")
+}
+
+model BookingEquipment {
+  id            String    @id @default(uuid())
+  bookingId     String
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  equipmentId   String
+  equipment     Equipment @relation(fields: [equipmentId], references: [id])
+  quantity      Int       @default(1)
+  unitPrice     Decimal
+  rentalCost    Decimal   @default(0)
+  totalRevenue  Decimal
+  totalCost     Decimal   @default(0)
+  notes         String?
+
+  @@index([bookingId])
+  @@index([equipmentId])
+  @@map("booking_equipment")
+}
+
+// ============================================================
+// SUPPLIERS & EXTERNAL RENTALS
+// ============================================================
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  whatsapp  String?
+  email     String?
+  address   String?
+  notes     String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  externalRentals ExternalRental[]
+
+  @@index([name])
+  @@map("suppliers")
+}
+
+model ExternalRental {
+  id            String   @id @default(uuid())
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  equipmentName String
+  quantity      Int      @default(1)
+  rentalCost    Decimal
+  rentalStart   DateTime
+  rentalEnd     DateTime?
+  status        String   @default("PENDING")
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  deletedAt     DateTime?
+
+  @@index([supplierId])
+  @@index([bookingId])
+  @@index([deletedAt])
+  @@map("external_rentals")
+}
+
+// ============================================================
+// INVOICES & PAYMENTS
+// ============================================================
+
+model Invoice {
+  id              String    @id @default(uuid())
+  invoiceNumber   String    @unique
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  bookingId       String?
+  booking         Booking?  @relation(fields: [bookingId], references: [id])
+  invoiceDate     DateTime  @default(now())
+  dueDate         DateTime?
+  subtotal        Decimal   @default(0)
+  discount        Decimal   @default(0)
+  tax             Decimal   @default(0)
+  total           Decimal   @default(0)
+  paidAmount      Decimal   @default(0)
+  remainingAmount Decimal   @default(0)
+  status          String    @default("DRAFT")
+  notes           String?
+  pdfPath         String?
+  createdById     String
+  createdBy       User      @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  items          InvoiceItem[]
+  payments       Payment[]
+
+  @@index([invoiceNumber])
+  @@index([customerId])
+  @@index([bookingId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  itemType    String
+  referenceId String?
+  quantity    Int      @default(1)
+  unitPrice   Decimal
+  discount    Decimal  @default(0)
+  total       Decimal
+  createdAt   DateTime @default(now())
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id              String    @id @default(uuid())
+  invoiceId       String
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
+  bookingId       String?
+  booking         Booking?  @relation(fields: [bookingId], references: [id])
+  customerId      String?
+  customer        Customer? @relation("CustomerPayments", fields: [customerId], references: [id])
+  amount          Decimal
+  paymentMethod   String
+  paymentDate     DateTime  @default(now())
+  referenceNumber String?
+  notes           String?
+  receivedById    String?
+  receivedBy      User?     @relation("PaymentReceivedBy", fields: [receivedById], references: [id])
+  createdAt       DateTime  @default(now())
+
+  @@index([invoiceId])
+  @@index([bookingId])
+  @@index([customerId])
+  @@index([paymentDate])
+  @@map("payments")
+}
+
+// ============================================================
+// EXPENSES
+// ============================================================
+
+model Expense {
+  id            String    @id @default(uuid())
+  category      String
+  description   String
+  amount        Decimal
+  expenseDate   DateTime  @default(now())
+  supplier      String?
+  bookingId     String?
+  booking       Booking?  @relation(fields: [bookingId], references: [id])
+  paymentMethod String?
+  notes         String?
+  createdById   String
+  createdBy     User      @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  deletedAt     DateTime?
+
+  @@index([category])
+  @@index([bookingId])
+  @@index([expenseDate])
+  @@index([deletedAt])
+  @@map("expenses")
+}
+
+// ============================================================
+// MARKETING
+// ============================================================
+
+model MarketingCampaign {
+  id            String              @id @default(uuid())
+  name          String
+  message       String
+  targetSegment String
+  segmentRules  String?
+  scheduledAt   DateTime?
+  status        String              @default("DRAFT")
+  createdById   String
+  createdBy     User                @relation("CampaignCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  recipients    CampaignRecipient[]
+
+  @@index([status])
+  @@map("marketing_campaigns")
+}
+
+model CampaignRecipient {
+  id          String            @id @default(uuid())
+  campaignId  String
+  campaign    MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer          @relation(fields: [customerId], references: [id])
+  status      String            @default("PENDING")
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  failedAt    DateTime?
+  errorMessage String?
+  response    String?
+  createdAt   DateTime          @default(now())
+
+  @@index([campaignId])
+  @@index([customerId])
+  @@map("campaign_recipients")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  data      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  oldValue  String?
+  newValue  String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([entityId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// REFRESH TOKENS
+// ============================================================
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+  @@map("settings")
+}
