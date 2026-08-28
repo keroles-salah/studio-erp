@@ -423,6 +423,125 @@
   }
 }
 
+/* ─── Print: one-page invoice ──────────────────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 4mm 5mm;
+  }
+
+  html,
+  body {
+    overflow: hidden !important;
+  }
+
+  #invoice-print.invoice-print-page {
+    box-sizing: border-box !important;
+    width: 125% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: 287mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: scale(0.8);
+    transform-origin: top right;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: avoid !important;
+    break-before: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #invoice-print.invoice-print-page > div:last-child {
+    min-height: 0 !important;
+  }
+
+  #invoice-print.invoice-print-page .print\\:hidden {
+    display: none !important;
+  }
+
+  #invoice-print.invoice-print-page .print\\:block {
+    display: block !important;
+  }
+
+  #invoice-print.invoice-print-page .md\\:hidden {
+    display: none !important;
+  }
+
+  #invoice-print.invoice-print-page .md\\:block {
+    display: block !important;
+  }
+
+  #invoice-print.invoice-print-page .space-y-4 > :not([hidden]) ~ :not([hidden]),
+  #invoice-print.invoice-print-page .space-y-3 > :not([hidden]) ~ :not([hidden]),
+  #invoice-print.invoice-print-page .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 5px !important;
+  }
+
+  #invoice-print.invoice-print-page .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 3px !important;
+  }
+
+  #invoice-print.invoice-print-page .p-4 {
+    padding: 10px !important;
+  }
+
+  #invoice-print.invoice-print-page .p-3 {
+    padding: 7px !important;
+  }
+
+  #invoice-print.invoice-print-page .p-2\.5 {
+    padding: 6px !important;
+  }
+
+  #invoice-print.invoice-print-page .gap-4 {
+    gap: 8px !important;
+  }
+
+  #invoice-print.invoice-print-page .gap-3 {
+    gap: 6px !important;
+  }
+
+  #invoice-print.invoice-print-page .gap-6 {
+    gap: 10px !important;
+  }
+
+  #invoice-print.invoice-print-page .pb-4 {
+    padding-bottom: 8px !important;
+  }
+
+  #invoice-print.invoice-print-page .pt-3 {
+    padding-top: 7px !important;
+  }
+
+  #invoice-print.invoice-print-page .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 12px !important;
+  }
+
+  #invoice-print.invoice-print-page .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 7px !important;
+  }
+
+  #invoice-print.invoice-print-page .h-14,
+  #invoice-print.invoice-print-page .w-14 {
+    height: 44px !important;
+    width: 44px !important;
+  }
+
+  #invoice-print.invoice-print-page .h-11,
+  #invoice-print.invoice-print-page .w-11 {
+    height: 34px !important;
+    width: 34px !important;
+  }
+
+  #invoice-print.invoice-print-page .h-12,
+  #invoice-print.invoice-print-page .w-12 {
+    height: 38px !important;
+    width: 38px !important;
+  }
+}
+
 /* ─── Print: reports ──────────────────────────────────────── */
 @media print {
   .lg\:ms-\[17\.5rem\] {
