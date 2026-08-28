@@ -268,10 +268,10 @@ export default function InvoiceDetail() {
   const paidPercent = data.total > 0 ? Math.min(100, Math.round((data.paid / data.total) * 100)) : 100;
 
   return (
-    <div className="space-y-6 relative">
+    <div className="relative min-w-0 space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 end-5 z-50 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 shadow-xl animate-in slide-in-from-top-4">
+        <div className="fixed top-5 end-5 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 shadow-xl animate-in slide-in-from-top-4">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           <span>{toastMessage}</span>
         </div>
@@ -279,7 +279,7 @@ export default function InvoiceDetail() {
 
       {/* Top Toolbar (Hidden when printing) */}
       <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
           <Link
             to="/invoices"
             className="flex items-center gap-1.5 font-medium text-slate-500 transition hover:text-primary-600"
@@ -288,7 +288,7 @@ export default function InvoiceDetail() {
             {t('nav.invoices')}
           </Link>
           <span className="text-slate-300">/</span>
-          <span className="font-mono font-bold text-slate-800">{data.invoiceNumber}</span>
+          <span className="min-w-0 break-all font-mono font-bold text-slate-800">{data.invoiceNumber}</span>
           <button
             type="button"
             onClick={handleCopyInvoiceNumber}
@@ -341,12 +341,12 @@ export default function InvoiceDetail() {
       {/* Main Official Invoice Container */}
       <div
         id="invoice-print"
-        className="mx-auto max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
+        className="mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
       >
         {/* Luxury Top Header Border */}
         <div className="h-2 w-full bg-gradient-to-r from-slate-950 via-primary-600 to-amber-500 rounded-t-2xl print:rounded-none" />
 
-        <div className="p-4 sm:p-6 print:p-2 space-y-4 print:space-y-2.5">
+        <div className="min-w-0 p-4 sm:p-6 print:p-2 space-y-4 print:space-y-2.5">
           {/* Header Section: Tax Invoice on Right, Studio Brand on Left */}
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
             {/* 1. Document Details & Official Tax Invoice Badge (Right in RTL) */}
@@ -391,11 +391,11 @@ export default function InvoiceDetail() {
             </div>
 
             {/* 2. Studio Identity & English Brand (Left in RTL) */}
-            <div className="flex items-start gap-3 text-start" dir="ltr">
+            <div className="flex min-w-0 items-start gap-3 text-start" dir="ltr">
               <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-slate-100 bg-white p-1.5 shadow-sm">
                 <img src={data.studio.logo || `${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="h-11 w-11 object-contain" />
               </div>
-              <div className="space-y-0.5">
+              <div className="min-w-0 space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-primary-600">
                     REAL HOME LENS
@@ -404,7 +404,7 @@ export default function InvoiceDetail() {
                     STUDIO
                   </span>
                 </div>
-                <h1 className="text-xl font-black tracking-tight text-slate-900 leading-tight">
+                <h1 className="break-words text-xl font-black tracking-tight text-slate-900 leading-tight">
                   {data.studio.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
@@ -424,11 +424,11 @@ export default function InvoiceDetail() {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-400">
                   <span className="inline-flex items-center gap-1">
                     <MapPin className="h-2.5 w-2.5 text-slate-400" />
-                    <span>{data.studio.address}</span>
+                    <span className="break-words">{data.studio.address}</span>
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Phone className="h-2.5 w-2.5 text-slate-400" />
-                    <span>{data.studio.phone}</span>
+                    <span className="break-all">{data.studio.phone}</span>
                   </span>
                 </div>
               </div>
@@ -481,23 +481,23 @@ export default function InvoiceDetail() {
                 </p>
                 <p className="flex items-center justify-between">
                   <span className="text-slate-500">الآيبان IBAN:</span>
-                  <strong className="font-mono text-slate-900" dir="ltr">{data.studio.iban}</strong>
+                  <strong className="max-w-[65%] break-all text-end font-mono text-slate-900" dir="ltr">{data.studio.iban}</strong>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Itemized Table */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:border-slate-300 print:overflow-hidden">
-            <table className="w-full min-w-[540px] sm:min-w-0 text-start text-[11px]">
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:block print:border-slate-300 print:overflow-hidden sm:block">
+            <table className="w-full min-w-[540px] text-start text-[11px] sm:min-w-0">
               <thead>
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
-                  <th className="px-3 py-2 text-start font-bold uppercase w-8">#</th>
+                  <th className="w-8 px-3 py-2 text-start font-bold uppercase">#</th>
                   <th className="px-3 py-2 text-start font-bold uppercase">الخدمة / البند (Description)</th>
-                  <th className="px-3 py-2 text-center font-bold uppercase w-16">الكمية</th>
-                  <th className="px-3 py-2 text-end font-bold uppercase w-28">سعر الوحدة</th>
-                  {data.discount > 0 && <th className="px-3 py-2 text-end font-bold uppercase w-20">الخصم</th>}
-                  <th className="px-3 py-2 text-end font-bold uppercase w-28">المجموع</th>
+                  <th className="w-16 px-3 py-2 text-center font-bold uppercase">الكمية</th>
+                  <th className="w-28 px-3 py-2 text-end font-bold uppercase">سعر الوحدة</th>
+                  {data.discount > 0 && <th className="w-20 px-3 py-2 text-end font-bold uppercase">الخصم</th>}
+                  <th className="w-28 px-3 py-2 text-end font-bold uppercase">المجموع</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -505,9 +505,7 @@ export default function InvoiceDetail() {
                   data.items.map((item, idx) => (
                     <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/60' : 'bg-white'}>
                       <td className="px-3 py-2 font-mono text-slate-400">{idx + 1}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-800" dir="auto">
-                        {item.description}
-                      </td>
+                      <td className="px-3 py-2 font-semibold text-slate-800" dir="auto">{item.description}</td>
                       <td className="px-3 py-2 text-center font-mono font-medium text-slate-700">{item.quantity}</td>
                       <td className="px-3 py-2 text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</td>
                       {data.discount > 0 && (
@@ -520,13 +518,41 @@ export default function InvoiceDetail() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-slate-400">
-                      لا توجد بنود مسجلة
-                    </td>
+                    <td colSpan={6} className="py-4 text-center text-slate-400">لا توجد بنود مسجلة</td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="space-y-2 sm:hidden">
+            {data.items?.length > 0 ? (
+              data.items.map((item, idx) => (
+                <div key={item.id || idx} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">البند {idx + 1}</p>
+                      <p className="break-words text-[12px] font-semibold leading-5 text-slate-800" dir="auto">{item.description}</p>
+                    </div>
+                    <span className="shrink-0 text-end font-mono text-[12px] font-bold text-slate-900">{formatCurrency(item.total)}</span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-slate-100 pt-2 text-[10px]">
+                    <span className="text-slate-500">الكمية</span>
+                    <span className="text-end font-mono font-medium text-slate-700">{item.quantity}</span>
+                    <span className="text-slate-500">سعر الوحدة</span>
+                    <span className="text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</span>
+                    {data.discount > 0 && (
+                      <>
+                        <span className="text-slate-500">الخصم</span>
+                        <span className="text-end font-mono text-emerald-600">{item.discount ? `- ${formatCurrency(item.discount)}` : '—'}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-slate-200 py-4 text-center text-[11px] text-slate-400">لا توجد بنود مسجلة</div>
+            )}
           </div>
 
           {/* Totals & Payments Section with Visual Progress Bar */}
@@ -545,17 +571,17 @@ export default function InvoiceDetail() {
                         key={p.id}
                         className="flex flex-wrap items-center justify-between gap-y-1 rounded-lg border border-emerald-100 bg-emerald-50/70 px-2.5 py-1 text-[11px]"
                       >
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                          <div>
-                            <span className="font-semibold text-slate-800">
+                        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+                          <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" />
+                          <div className="min-w-0">
+                            <span className="break-words font-semibold text-slate-800">
                               {getPaymentMethodLabel(p.method)}
                               {p.reference !== '-' && <span className="font-mono text-slate-500"> ({p.reference})</span>}
                             </span>
                             <span className="text-[10px] text-slate-400 me-2 ms-2">| {formatDate(p.date)}</span>
                           </div>
                         </div>
-                        <span className="font-mono font-bold text-emerald-700">{formatCurrency(p.amount)}</span>
+                        <span className="shrink-0 font-mono font-bold text-emerald-700">{formatCurrency(p.amount)}</span>
                       </div>
                     ))}
                   </div>
@@ -580,7 +606,7 @@ export default function InvoiceDetail() {
             </div>
 
             {/* Right side: Financial Breakdown Card + Payment Progress Bar */}
-            <div className="sm:col-span-5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2 print:bg-white print:border-slate-300">
+            <div className="min-w-0 sm:col-span-5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2 print:bg-white print:border-slate-300">
               <div className="flex items-center justify-between text-[11px] text-slate-600">
                 <span>المجموع الفرعي:</span>
                 <span className="font-mono font-medium text-slate-800">{formatCurrency(data.subtotal)}</span>
@@ -679,9 +705,9 @@ export default function InvoiceDetail() {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px] text-slate-400">
-              <p>© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
-              <p className="flex items-center gap-1 font-mono">
-                <FileCheck className="h-3 w-3 text-slate-400" />
+              <p className="min-w-0 break-words">© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
+              <p className="flex min-w-0 max-w-full items-center gap-1 break-all font-mono">
+                <FileCheck className="h-3 w-3 shrink-0 text-slate-400" />
                 <span>Doc Ref: {data.id}</span>
               </p>
             </div>
