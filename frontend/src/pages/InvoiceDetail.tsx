@@ -300,13 +300,13 @@ export default function InvoiceDetail() {
           </button>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2.5 md:w-auto">
           {/* Quick Payment Button */}
           {!isPaid && (
             <button
               type="button"
               onClick={openPaymentModal}
-              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-700"
+              className="inline-flex w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-700"
             >
               <CreditCard className="h-4 w-4" />
               <span>تسجيل دفعة سريعة</span>
@@ -318,7 +318,7 @@ export default function InvoiceDetail() {
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+              className="inline-flex w-full md:w-auto items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
               title="إرسال الفاتورة عبر واتساب"
             >
               <Phone className="h-4 w-4 text-emerald-600" />
@@ -330,7 +330,7 @@ export default function InvoiceDetail() {
           <button
             type="button"
             onClick={handlePrint}
-            className="btn-primary inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 shadow-md shadow-primary-600/20"
+            className="btn-primary inline-flex w-full md:w-auto items-center justify-center gap-2 px-5 py-2.5 shadow-md shadow-primary-600/20"
           >
             <Printer className="h-4 w-4" />
             <span>طباعة الفاتورة الرسمية</span>
@@ -346,11 +346,11 @@ export default function InvoiceDetail() {
         {/* Luxury Top Header Border */}
         <div className="h-2 w-full bg-gradient-to-r from-slate-950 via-primary-600 to-amber-500 rounded-t-2xl print:rounded-none" />
 
-        <div className="min-w-0 p-4 sm:p-6 print:p-2 space-y-4 print:space-y-2.5">
+        <div className="min-w-0 p-4 md:p-6 print:p-2 space-y-4 print:space-y-2.5">
           {/* Header Section: Tax Invoice on Right, Studio Brand on Left */}
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
             {/* 1. Document Details & Official Tax Invoice Badge (Right in RTL) */}
-            <div className="w-full sm:min-w-[220px] rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-start shadow-sm print:bg-white print:border-slate-300 print:p-2">
+            <div className="w-full md:min-w-[220px] rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-start shadow-sm print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">فاتورة ضريبية رسمية</p>
@@ -436,7 +436,7 @@ export default function InvoiceDetail() {
           </div>
 
           {/* Customer & Billing Parties Section */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
             {/* Customer Box */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200/80 pb-1">
@@ -488,8 +488,8 @@ export default function InvoiceDetail() {
           </div>
 
           {/* Itemized Table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:block print:border-slate-300 print:overflow-hidden sm:block">
-            <table className="w-full min-w-[540px] text-start text-[11px] sm:min-w-0">
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:block print:border-slate-300 print:overflow-hidden md:block">
+            <table className="w-full min-w-[540px] text-start text-[11px] md:min-w-0">
               <thead>
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
                   <th className="w-8 px-3 py-2 text-start font-bold uppercase">#</th>
@@ -525,7 +525,7 @@ export default function InvoiceDetail() {
             </table>
           </div>
 
-          <div className="space-y-2 sm:hidden">
+          <div className="space-y-2 md:hidden">
             {data.items?.length > 0 ? (
               data.items.map((item, idx) => (
                 <div key={item.id || idx} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -556,9 +556,9 @@ export default function InvoiceDetail() {
           </div>
 
           {/* Totals & Payments Section with Visual Progress Bar */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-12 items-start">
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-12 items-start">
             {/* Left side: Payments + QR Badge */}
-            <div className="sm:col-span-7 space-y-2.5">
+            <div className="md:col-span-7 space-y-2.5">
               {data.payments?.length > 0 && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 print:bg-white print:border-slate-300">
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -606,7 +606,7 @@ export default function InvoiceDetail() {
             </div>
 
             {/* Right side: Financial Breakdown Card + Payment Progress Bar */}
-            <div className="min-w-0 sm:col-span-5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2 print:bg-white print:border-slate-300">
+            <div className="min-w-0 md:col-span-5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2 print:bg-white print:border-slate-300">
               <div className="flex items-center justify-between text-[11px] text-slate-600">
                 <span>المجموع الفرعي:</span>
                 <span className="font-mono font-medium text-slate-800">{formatCurrency(data.subtotal)}</span>
@@ -689,7 +689,7 @@ export default function InvoiceDetail() {
 
           {/* Official Footer, Terms & Signatures */}
           <div className="border-t border-slate-200 pt-3 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-[11px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[11px]">
               <div className="space-y-6">
                 <p className="font-bold text-slate-700">توقيع العميل / المستلم:</p>
                 <div className="w-40 border-b border-dashed border-slate-300" />
@@ -755,7 +755,7 @@ export default function InvoiceDetail() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="label">طريقة الدفع</label>
                   <select
