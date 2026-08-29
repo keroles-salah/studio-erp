@@ -35,12 +35,19 @@ import {
 import api from '../lib/api';
 import { Link } from 'react-router-dom';
 import { LANDING_COUNTER_DURATION_MS } from '../lib/constants';
+import {
+  BRAND_NAME,
+  BRAND_PHONE,
+  BRAND_WHATSAPP,
+  BRAND_EMAIL,
+  BRAND_LOCATION,
+} from '../lib/brand';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
-const WHATSAPP_NUMBER = '966500000000';
+const WHATSAPP_NUMBER = BRAND_WHATSAPP;
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 const services = [
@@ -296,6 +303,46 @@ export default function Landing() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // Pull studio identity (name, phone, whatsapp, email, address) from the
+  // public-facing settings endpoint so the landing page reflects the
+  // actual configured studio rather than hardcoded fallback values.
+  // Failures are non-fatal — we render with the brand fallbacks.
+  const [studio, setStudio] = useState<{
+    name: string;
+    phone: string;
+    whatsapp: string;
+    email: string;
+    address: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/settings/studio')
+      .then((res) => {
+        if (cancelled) return;
+        const s = res.data?.data?.studio || {};
+        setStudio({
+          name: s['studio.name'] || BRAND_NAME,
+          phone: s['studio.phone'] || BRAND_PHONE,
+          whatsapp: s['studio.whatsapp'] || BRAND_WHATSAPP,
+          email: s['studio.email'] || BRAND_EMAIL,
+          address: s['studio.address'] || BRAND_LOCATION,
+        });
+      })
+      .catch(() => {
+        /* keep null — fallbacks will be used */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const studioName = studio?.name ?? BRAND_NAME;
+  const studioPhone = studio?.phone ?? BRAND_PHONE;
+  const studioEmail = studio?.email ?? BRAND_EMAIL;
+  const studioAddress = studio?.address ?? BRAND_LOCATION;
+
   // Smooth scroll
   useEffect(() => {
     const handleClick = (e: Event) => {
@@ -372,8 +419,8 @@ export default function Landing() {
       <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <a href="#hero" className="flex items-center gap-2 text-xl font-bold text-primary-700">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-9 w-9 object-contain" />
-            <span>REAL HOME LENS</span>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt={studioName} className="h-9 w-9 object-contain" />
+            <span>{studioName}</span>
           </a>
 
           <div className="hidden items-center gap-6 lg:flex">
@@ -447,7 +494,7 @@ export default function Landing() {
           </div>
 
           <h1 className="mb-4 text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            REAL HOME LENS
+            {studioName}
           </h1>
           <p className="mb-2 text-2xl font-medium text-primary-100 sm:text-3xl">
             نحوّل لحظاتكم إلى ذكريات خالدة
@@ -570,7 +617,7 @@ export default function Landing() {
               لماذا نحن
             </span>
             <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">
-              لماذا تختار REAL HOME LENS؟
+              لماذا تختار {studioName}؟
             </h2>
             <p className="mt-4 text-slate-600">
               نتميز بمجموعة من المميزات التي تجعلنا الخيار الأول لعملائنا
@@ -1001,8 +1048,8 @@ export default function Landing() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 text-xl font-bold text-white">
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-8 w-8 object-contain" />
-                <span>REAL HOME LENS</span>
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt={studioName} className="h-8 w-8 object-contain" />
+                <span>{studioName}</span>
               </div>
               <p className="mt-4 text-sm leading-relaxed">
                 استوديو احترافي متخصص في تصوير الأفراح والفعاليات وإنتاج الفيديو بأعلى معايير الجودة.
@@ -1061,7 +1108,7 @@ export default function Landing() {
               <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-primary-400" />
-                  <span dir="ltr">+966 50 000 0000</span>
+                  <span dir="ltr">{studioPhone}</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <MessageCircle className="h-4 w-4 text-green-400" />
@@ -1071,11 +1118,11 @@ export default function Landing() {
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-primary-400" />
-                  <span>info@realhomelens.sa</span>
+                  <span>{studioEmail}</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 text-primary-400" />
-                  <span>الرياض، المملكة العربية السعودية</span>
+                  <span>{studioAddress}</span>
                 </li>
               </ul>
             </div>
@@ -1083,7 +1130,7 @@ export default function Landing() {
 
           <div className="mt-12 border-t border-slate-800 pt-6 text-center text-sm">
             <p>
-              © {new Date().getFullYear()} REAL HOME LENS. جميع الحقوق محفوظة.
+              © {new Date().getFullYear()} {studioName}. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>

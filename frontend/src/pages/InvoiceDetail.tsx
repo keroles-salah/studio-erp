@@ -32,6 +32,17 @@ import {
   COPY_FEEDBACK_DURATION_MS,
   DEFAULT_TAX_RATE_PERCENT,
 } from '../lib/constants';
+import {
+  BRAND_NAME,
+  BRAND_PHONE,
+  BRAND_EMAIL,
+  BRAND_WEBSITE,
+  BRAND_VAT_NUMBER,
+  BRAND_CR_NUMBER,
+  BRAND_BANK_NAME,
+  BRAND_IBAN,
+  BRAND_LOCATION,
+} from '../lib/brand';
 
 export interface InvoiceData {
   id: string;
@@ -117,18 +128,18 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
       address: raw.customer?.address ?? '',
     },
     studio: {
-      name: settings?.['studio.name'] || 'REAL HOME LENS',
+      name: settings?.['studio.name'] || BRAND_NAME,
       logo: settings?.['studio.logo'] || `${import.meta.env.BASE_URL}logo.png`,
-      phone: settings?.['studio.phone'] || '+966 50 000 0000',
-      whatsapp: settings?.['studio.whatsapp'] || '+966 50 000 0000',
-      email: settings?.['studio.email'] || 'info@realhomelens.com',
-      address: settings?.['studio.address'] || 'المملكة العربية السعودية - الرياض',
-      website: settings?.['studio.website'] || 'www.realhomelens.com',
-      vatNumber: settings?.['studio.vat_number'] || '300984729100003',
-      crNumber: settings?.['studio.cr_number'] || '1010894721',
-      bankName: settings?.['studio.bank_name'] || 'مصرف الراجحي / Al Rajhi Bank',
-      accountName: settings?.['studio.account_name'] || settings?.['studio.name'] || 'REAL HOME LENS',
-      iban: settings?.['studio.iban'] || 'SA4480000456608010123456',
+      phone: settings?.['studio.phone'] || BRAND_PHONE,
+      whatsapp: settings?.['studio.whatsapp'] || BRAND_PHONE,
+      email: settings?.['studio.email'] || BRAND_EMAIL,
+      address: settings?.['studio.address'] || BRAND_LOCATION,
+      website: settings?.['studio.website'] || BRAND_WEBSITE,
+      vatNumber: settings?.['studio.vat_number'] || BRAND_VAT_NUMBER,
+      crNumber: settings?.['studio.cr_number'] || BRAND_CR_NUMBER,
+      bankName: settings?.['studio.bank_name'] || BRAND_BANK_NAME,
+      accountName: settings?.['studio.account_name'] || settings?.['studio.name'] || BRAND_NAME,
+      iban: settings?.['studio.iban'] || BRAND_IBAN,
     },
     items: (raw.items ?? []).map((it: any) => ({
       id: it.id,
@@ -403,7 +414,7 @@ export default function InvoiceDetail() {
               <div className="min-w-0 space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-primary-600">
-                    REAL HOME LENS
+                    {BRAND_NAME}
                   </span>
                   <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[9px] font-bold text-slate-600">
                     STUDIO
