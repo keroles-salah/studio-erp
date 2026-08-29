@@ -513,6 +513,149 @@
   }
 }
 
+/* ─── Print: clean studio invoice layout ───────────────────── */
+@media print {
+  /* Reference direction: a clean document, not a collection of cards. */
+  #invoice-print.invoice-print-document {
+    border: 0.25mm solid #d8dee8 !important;
+    border-radius: 0 !important;
+    font-size: 9.5px !important;
+    line-height: 1.25 !important;
+    color: #172033 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:first-child {
+    height: 2.5mm !important;
+    background: linear-gradient(90deg, #152238 0%, #334155 52%, #d69a2d 78%, #f5b51b 100%) !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) {
+    padding: 4mm !important;
+    gap: 0 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div {
+    margin-top: 0 !important;
+  }
+
+  /* Header: invoice metadata right, studio identity left. */
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(1) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr) !important;
+    align-items: center !important;
+    gap: 5mm !important;
+    padding-bottom: 3mm !important;
+    margin-bottom: 3mm !important;
+    border-bottom: 0.25mm solid #d8dee8 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(1) > div {
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(1) > div:first-child {
+    border-inline-start: 1.2mm solid #d69a2d !important;
+    padding-inline-start: 3mm !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(1) > div:last-child {
+    justify-content: flex-end !important;
+  }
+
+  /* Billed-to and bank details use quiet full-width strips like the reference. */
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(2) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 2mm !important;
+    margin-bottom: 3mm !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(2) > div {
+    padding: 2.4mm 3mm !important;
+    border: 0.25mm solid #d8dee8 !important;
+    border-radius: 1.5mm !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(2) h3,
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(2) svg {
+    color: #25354f !important;
+  }
+
+  /* The items table is the primary visual anchor. */
+  #invoice-print.invoice-print-document table {
+    font-size: 9px !important;
+    border-collapse: collapse !important;
+  }
+
+  #invoice-print.invoice-print-document table thead tr {
+    background: #172033 !important;
+  }
+
+  #invoice-print.invoice-print-document table th {
+    color: #ffffff !important;
+    font-size: 8px !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  #invoice-print.invoice-print-document table th,
+  #invoice-print.invoice-print-document table td {
+    padding: 1.6mm 2mm !important;
+    border-color: #e5eaf0 !important;
+  }
+
+  #invoice-print.invoice-print-document table tbody tr:nth-child(even),
+  #invoice-print.invoice-print-document table tbody tr:nth-child(even) td {
+    background: #f8fafc !important;
+  }
+
+  /* Payments, verification and totals remain compact and visually subordinate. */
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(5) {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr) !important;
+    gap: 3mm !important;
+    margin-top: 3mm !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(5) .rounded-xl,
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(5) .rounded-lg {
+    padding: 2.5mm !important;
+    border: 0.25mm solid #d8dee8 !important;
+    border-radius: 1.5mm !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(5) .bg-emerald-50\/70 {
+    background: #f1fbf6 !important;
+    border-color: #b8ead2 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(5) .bg-slate-900 {
+    background: #172033 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:nth-child(5) .text-amber-400 {
+    color: #f6c453 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) > div:last-child {
+    padding-top: 2.5mm !important;
+    margin-top: 3mm !important;
+  }
+
+  #invoice-print.invoice-print-document .rounded-xl,
+  #invoice-print.invoice-print-document .rounded-lg {
+    box-shadow: none !important;
+  }
+}
+
 /* ─── Print: reports ──────────────────────────────────────── */
 @media print {
   .lg\:ms-\[17\.5rem\] {
