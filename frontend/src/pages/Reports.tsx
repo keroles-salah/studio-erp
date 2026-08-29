@@ -26,6 +26,7 @@ import {
   THOUSAND_FORMAT_THRESHOLD,
   COMPACT_NUMBER_DECIMALS,
 } from '../lib/constants';
+import { BRAND_NAME } from '../lib/brand';
 
 // ─── Types ──────────────────────────────────────────────────
 interface SummaryObject { [key: string]: unknown; }
@@ -621,7 +622,7 @@ export default function Reports() {
               <Icon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-500">REAL HOME LENS</p>
+              <p className="text-sm font-bold text-slate-500">{BRAND_NAME}</p>
               <h1 className="text-2xl font-bold text-slate-900">{report.label}</h1>
             </div>
           </div>

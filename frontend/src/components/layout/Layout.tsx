@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import SearchBox from './SearchBox';
+import { BRAND_NAME } from '../../lib/brand';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -94,6 +95,22 @@ export default function Layout({ children }: LayoutProps) {
     },
   });
 
+  // Fetch the studio name from settings so the navbar reflects the actual
+  // configured studio name rather than the hardcoded brand fallback.
+  const { data: studioName } = useQuery<string>({
+    queryKey: ['studio-name'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/settings/studio');
+        return res.data?.data?.studio?.['studio.name'] || BRAND_NAME;
+      } catch {
+        return BRAND_NAME;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const brandName = studioName ?? BRAND_NAME;
+
   const userName = currentUser?.name || 'مستخدم النظام';
   const userEmail = currentUser?.email || '';
   const userRole = getRoleLabel(currentUser?.role?.name || '');
@@ -132,9 +149,9 @@ export default function Layout({ children }: LayoutProps) {
         <div className="pointer-events-none absolute -top-24 -end-24 h-56 w-56 rounded-full bg-primary-500/15 blur-3xl" />
         <div className="relative flex h-[4.75rem] items-center justify-between border-b border-white/10 px-5">
           <div className="flex items-center gap-3">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-10 w-10 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt={brandName} className="h-10 w-10 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
             <div>
-              <p className="text-[15px] font-bold tracking-tight">REAL HOME LENS</p>
+              <p className="text-[15px] font-bold tracking-tight">{brandName}</p>
               <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">نظام الإدارة</p>
             </div>
           </div>
@@ -207,7 +224,7 @@ export default function Layout({ children }: LayoutProps) {
             </button>
             <div className="hidden h-10 w-px bg-slate-200 sm:block lg:hidden" />
             <SearchBox />
-            <p className="truncate text-sm font-semibold text-slate-700 sm:hidden">REAL HOME LENS</p>
+            <p className="truncate text-sm font-semibold text-slate-700 sm:hidden">{brandName}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <button type="button" onClick={toggleLanguage} className="hidden items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 sm:flex">
