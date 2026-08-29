@@ -35,6 +35,7 @@ import {
 } from 'recharts';
 import api from '../lib/api';
 import { formatCurrency, formatDate, getPaymentMethodLabel } from '../lib/utils';
+import { ONE_DAY_MS } from '../lib/constants';
 
 interface DashboardData {
   topCards: {
@@ -165,6 +166,14 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
+  // Today's date formatted in the active UI language (ar/en).
+  // Computed once per render; cheap and stable for the day.
+  const todayLabel = new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
+
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
     queryFn: async () => {
@@ -204,7 +213,7 @@ export default function Dashboard() {
     const eventD = new Date(dateStr);
     const today = new Date();
     const isToday = eventD.toDateString() === today.toDateString();
-    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrow = new Date(today.getTime() + ONE_DAY_MS);
     const isTomorrow = eventD.toDateString() === tomorrow.toDateString();
 
     if (isToday) {
@@ -222,7 +231,7 @@ export default function Dashboard() {
         <div>
           <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary-600">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            {t('dashboard.today')}
+            {t('dashboard.today', { date: todayLabel })}
           </div>
           <h1 className="page-title">{t('dashboard.title')}</h1>
           <p className="muted-text mt-1">{t('dashboard.subtitle')}</p>

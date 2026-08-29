@@ -16,6 +16,12 @@ import {
   getPaymentMethodLabel,
   getEquipmentStatusLabel,
 } from '../lib/utils';
+import {
+  TOAST_DURATION_MS,
+  DEFAULT_PAGE_SIZE,
+  DROPDOWN_PAGE_SIZE,
+  ONE_WEEK_MS,
+} from '../lib/constants';
 
 interface Booking {
   id: string;
@@ -62,7 +68,7 @@ export default function Bookings() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
   };
 
   const { data: settings } = useQuery<Record<string, any>>({
@@ -164,7 +170,7 @@ export default function Bookings() {
       const mapped = (items as any[]).map((b) => ({ ...b, total: Number(b.total ?? 0), paid: Number(b.paidAmount ?? 0), customerName: b.customer?.fullName || "-", eventDate: b.event?.eventDate || null, eventType: b.event?.eventType || null }));
       const total = pagination?.total ?? 0;
       const cp = pagination?.page ?? 1;
-      const limit = pagination?.limit ?? 20;
+      const limit = pagination?.limit ?? DEFAULT_PAGE_SIZE;
       return { data: mapped, total, page: cp, totalPages: Math.ceil(total / limit) };
     },
   });
@@ -174,8 +180,8 @@ export default function Bookings() {
   useEffect(() => {
     if (!showModal) return;
     const load = async () => { 
-      try { const r = await api.get('/customers', { params: { limit: 50 } }); setCustomers(r.data.data.items || []); } catch {} 
-      try { const r = await api.get('/equipment', { params: { limit: 50 } }); if (modalOpenRef.current) setEquipmentList(r.data.data.items || []); } catch {}
+      try { const r = await api.get('/customers', { params: { limit: DROPDOWN_PAGE_SIZE } }); setCustomers(r.data.data.items || []); } catch {}
+      try { const r = await api.get('/equipment', { params: { limit: DROPDOWN_PAGE_SIZE } }); if (modalOpenRef.current) setEquipmentList(r.data.data.items || []); } catch {}
     };
     load();
   }, [showModal]);
@@ -270,7 +276,7 @@ export default function Bookings() {
       setToDate(today);
     } else if (pill === 'THIS_WEEK') {
       const now = new Date();
-      const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const nextWeek = new Date(now.getTime() + ONE_WEEK_MS).toISOString().split('T')[0];
       setStatus('');
       setFromDate(today);
       setToDate(nextWeek);

@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import api from '../lib/api';
+import { SAVE_SUCCESS_DURATION_MS } from '../lib/constants';
 
 const TABS = [
   { key: 'studio', label: 'بيانات الاستوديو والفوترة', icon: Building2, desc: 'الاسم، الشعار، الرقم الضريبي، وبيانات التواصل' },
@@ -110,7 +111,7 @@ export default function Settings() {
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
       await queryClient.invalidateQueries({ queryKey: ['invoice'] });
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
+      setTimeout(() => setSaveSuccess(false), SAVE_SUCCESS_DURATION_MS);
     } finally {
       setSaving(false);
     }

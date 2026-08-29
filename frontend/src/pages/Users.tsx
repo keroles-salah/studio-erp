@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { formatDateTime, getInitials, getRoleLabel, getSimpleStatusLabel } from '../lib/utils';
+import { TOAST_DURATION_MS } from '../lib/constants';
 
 interface User {
   id: string;
@@ -28,7 +29,7 @@ export default function Users() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
   };
 
   const { data: users, isLoading } = useQuery<User[]>({

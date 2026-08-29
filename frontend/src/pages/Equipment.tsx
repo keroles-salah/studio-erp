@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Package, AlertCircle, Wrench, CalendarDays, Plus, X } from 'lucide-react';
 import api from '../lib/api';
 import { formatCurrency, formatDate, getEquipmentStatusColor, getEquipmentStatusLabel, getEventTypeLabel, todayLocalDate } from '../lib/utils';
+import { LARGE_PAGE_SIZE } from '../lib/constants';
 
 interface Equipment {
   id: string;
@@ -111,7 +112,7 @@ export default function Equipment() {
   const { data: equipment, isLoading } = useQuery<Equipment[]>({
     queryKey: ['equipment', { search, category, status }],
     queryFn: async () => {
-      const params: Record<string, string> = { limit: '100' };
+      const params: Record<string, string> = { limit: String(LARGE_PAGE_SIZE) };
       if (search.trim()) params.search = search.trim();
       if (category) params.category = category;
       if (status) params.status = status;

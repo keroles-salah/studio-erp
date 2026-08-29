@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { formatCurrency, formatDate, getExpenseCategoryLabel, getPaymentMethodLabel } from '../lib/utils';
+import { LARGE_PAGE_SIZE } from '../lib/constants';
 
 interface Expense {
   id: string;
@@ -44,7 +45,7 @@ export default function Expenses() {
   const { data: bookingsList } = useQuery({
     queryKey: ['expenses-bookings'],
     queryFn: async () => {
-      const res = await api.get('/bookings', { params: { limit: 100, sortBy: 'createdAt', sortOrder: 'desc' } });
+      const res = await api.get('/bookings', { params: { limit: LARGE_PAGE_SIZE, sortBy: 'createdAt', sortOrder: 'desc' } });
       return (res.data.data.items || []).map((b: any) => ({ id: b.id, label: b.bookingNumber }));
     },
     enabled: showModal,
