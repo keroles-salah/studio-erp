@@ -5,12 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 import './lib/i18n';
+import { DEFAULT_STALE_TIME_MS } from './lib/constants';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
+      staleTime: DEFAULT_STALE_TIME_MS,
       retry: 1,
     },
   },

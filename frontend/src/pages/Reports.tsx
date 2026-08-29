@@ -21,6 +21,11 @@ import {
   getLeadStatusLabel, getLeadSourceLabel, getCampaignStatusLabel,
   getExpenseCategoryLabel,
 } from '../lib/utils';
+import {
+  MILLION_FORMAT_THRESHOLD,
+  THOUSAND_FORMAT_THRESHOLD,
+  COMPACT_NUMBER_DECIMALS,
+} from '../lib/constants';
 
 // ─── Types ──────────────────────────────────────────────────
 interface SummaryObject { [key: string]: unknown; }
@@ -337,8 +342,8 @@ function formatCardValue(card: CardDef, value: unknown): string {
 }
 
 function compactNumber(v: number): string {
-  if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  if (Math.abs(v) >= MILLION_FORMAT_THRESHOLD) return `${(v / MILLION_FORMAT_THRESHOLD).toFixed(COMPACT_NUMBER_DECIMALS)}M`;
+  if (Math.abs(v) >= THOUSAND_FORMAT_THRESHOLD) return `${(v / THOUSAND_FORMAT_THRESHOLD).toFixed(COMPACT_NUMBER_DECIMALS)}K`;
   return String(v);
 }
 

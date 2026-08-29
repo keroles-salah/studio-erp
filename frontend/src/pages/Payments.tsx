@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { formatCurrency, formatDate, getPaymentMethodLabel, todayLocalDate } from '../lib/utils';
+import { LARGE_PAGE_SIZE } from '../lib/constants';
 
 const METHODS = ['CASH', 'BANK_TRANSFER', 'CARD'];
 
@@ -34,7 +35,7 @@ export default function Payments() {
   const { data: invoicesData } = useQuery({
     queryKey: ['invoices-for-payment'],
     queryFn: async () => {
-      const r = await api.get('/invoices', { params: { limit: 100 } });
+      const r = await api.get('/invoices', { params: { limit: LARGE_PAGE_SIZE } });
       const all = r.data?.data?.items || [];
       return all.filter((inv: any) => inv.status !== 'PAID' && inv.status !== 'CANCELLED');
     },

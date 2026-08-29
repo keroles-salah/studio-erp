@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { formatCurrency, formatDate, getEquipmentStatusLabel, getInvoiceItemTypeLabel, getInvoiceStatusColor, getInvoiceStatusLabel, todayLocalDate } from '../lib/utils';
+import { LARGE_PAGE_SIZE } from '../lib/constants';
 
 interface Invoice {
   id: string;
@@ -183,7 +184,7 @@ export default function Invoices() {
   const { data: customers } = useQuery({
     queryKey: ['customers-options'],
     queryFn: async () => {
-      const res = await api.get('/customers', { params: { limit: 100 } });
+      const res = await api.get('/customers', { params: { limit: LARGE_PAGE_SIZE } });
       return res.data.data.items as CustomerOption[];
     },
   });
@@ -191,7 +192,7 @@ export default function Invoices() {
   const { data: bookings } = useQuery({
     queryKey: ['bookings-options'],
     queryFn: async () => {
-      const res = await api.get('/bookings', { params: { limit: 100 } });
+      const res = await api.get('/bookings', { params: { limit: LARGE_PAGE_SIZE } });
       return res.data.data.items as BookingOption[];
     },
   });
@@ -199,7 +200,7 @@ export default function Invoices() {
   const { data: equipmentOptions } = useQuery({
     queryKey: ['equipment-options'],
     queryFn: async () => {
-      const res = await api.get('/equipment', { params: { limit: 100 } });
+      const res = await api.get('/equipment', { params: { limit: LARGE_PAGE_SIZE } });
       return res.data.data.items as EquipmentOption[];
     },
   });

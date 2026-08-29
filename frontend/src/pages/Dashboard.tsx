@@ -35,6 +35,7 @@ import {
 } from 'recharts';
 import api from '../lib/api';
 import { formatCurrency, formatDate, getPaymentMethodLabel } from '../lib/utils';
+import { ONE_DAY_MS } from '../lib/constants';
 
 interface DashboardData {
   topCards: {
@@ -204,7 +205,7 @@ export default function Dashboard() {
     const eventD = new Date(dateStr);
     const today = new Date();
     const isToday = eventD.toDateString() === today.toDateString();
-    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrow = new Date(today.getTime() + ONE_DAY_MS);
     const isTomorrow = eventD.toDateString() === tomorrow.toDateString();
 
     if (isToday) {

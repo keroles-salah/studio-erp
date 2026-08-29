@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { formatDate, getEventTypeLabel, toLocalDateString } from '../lib/utils';
+import { LARGE_PAGE_SIZE } from '../lib/constants';
 
 interface CalendarEvent {
   id: string;
@@ -39,7 +40,7 @@ export default function Calendar() {
     queryFn: async () => {
       const startDate = toLocalDateString(new Date(year, month, 1));
       const endDate = toLocalDateString(new Date(year, month + 1, 0));
-      const res = await api.get('/bookings', { params: { eventDateFrom: startDate, eventDateTo: endDate, limit: 100 } });
+      const res = await api.get('/bookings', { params: { eventDateFrom: startDate, eventDateTo: endDate, limit: LARGE_PAGE_SIZE } });
       // Transform bookings to calendar events
       const bookings = res.data.data.items || [];
       return bookings.map((b: any) => ({

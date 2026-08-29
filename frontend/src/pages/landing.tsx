@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import { Link } from 'react-router-dom';
+import { LANDING_COUNTER_DURATION_MS } from '../lib/constants';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -258,7 +259,7 @@ function AnimatedCounter({ target, suffix }: { target: number; suffix: string })
       (entries) => {
         if (entries[0].isIntersecting && !started.current) {
           started.current = true;
-          const duration = 2000;
+          const duration = LANDING_COUNTER_DURATION_MS;
           const startTime = performance.now();
           const step = (now: number) => {
             const progress = Math.min((now - startTime) / duration, 1);
@@ -368,7 +369,7 @@ export default function Landing() {
   return (
     <div dir="rtl" lang="ar" className="min-h-screen bg-white font-arabic">
       {/* ===================== Navbar ===================== */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <a href="#hero" className="flex items-center gap-2 text-xl font-bold text-primary-700">
             <img src={`${import.meta.env.BASE_URL}logo.png`} alt="REAL HOME LENS" className="h-9 w-9 object-contain" />
@@ -436,8 +437,8 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-primary-900 to-primary-700" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
         {/* Decorative circles */}
-        <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary-500/20 blur-3xl" />
-        <div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-accent-500/10 blur-3xl" />
+        <div className="absolute -top-24 -end-24 h-96 w-96 rounded-full bg-primary-500/20 blur-3xl" />
+        <div className="absolute -bottom-32 -start-24 h-96 w-96 rounded-full bg-accent-500/10 blur-3xl" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-primary-100 backdrop-blur-sm ring-1 ring-white/20">
@@ -472,7 +473,7 @@ export default function Landing() {
           </div>
 
           {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+          <div className="absolute bottom-8 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
             <ChevronDown className="h-6 w-6 animate-bounce text-white/60" />
           </div>
         </div>
@@ -543,7 +544,7 @@ export default function Landing() {
                     عرض المشروع
                   </div>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent p-4">
                   <p className="text-sm font-medium text-white">
                     {['عرس أحمد وسارة', 'مؤتمر الرياض', 'حفل التخرج', 'جلسة استوديو', 'فعالية شركات', 'حفل زفاف'][i]}
                   </p>
@@ -619,7 +620,7 @@ export default function Landing() {
                 }`}
               >
                 {pkg.highlighted && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <div className="absolute -top-4 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary-600 px-4 py-1 text-xs font-bold text-white">
                       <Star className="h-3.5 w-3.5 fill-current" />
                       الأكثر طلباً
@@ -704,8 +705,8 @@ export default function Landing() {
 
       {/* ===================== 7. Stats ===================== */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-800 to-slate-900 py-20 lg:py-28">
-        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-primary-500/10 blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-accent-500/10 blur-3xl" />
+        <div className="absolute -top-24 -start-24 h-96 w-96 rounded-full bg-primary-500/10 blur-3xl" />
+        <div className="absolute -bottom-24 -end-24 h-96 w-96 rounded-full bg-accent-500/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-14 max-w-2xl text-center">
@@ -749,7 +750,7 @@ export default function Landing() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-end"
                 >
                   <span className="font-medium text-slate-900">{faq.q}</span>
                   <ChevronDown
@@ -810,13 +811,13 @@ export default function Landing() {
                     الاسم الكامل <span className="text-accent-600">*</span>
                   </label>
                   <div className="relative">
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <User className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       id="name"
                       name="name"
                       type="text"
                       required
-                      className="input pr-10"
+                      className="input pe-10"
                       placeholder="أدخل اسمك"
                     />
                   </div>
@@ -828,13 +829,13 @@ export default function Landing() {
                     رقم الهاتف <span className="text-accent-600">*</span>
                   </label>
                   <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Phone className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       id="phone"
                       name="phone"
                       type="tel"
                       required
-                      className="input pr-10"
+                      className="input pe-10"
                       placeholder="05xxxxxxxx"
                     />
                   </div>
@@ -846,12 +847,12 @@ export default function Landing() {
                     رقم الواتساب
                   </label>
                   <div className="relative">
-                    <MessageCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <MessageCircle className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       id="whatsapp"
                       name="whatsapp"
                       type="tel"
-                      className="input pr-10"
+                      className="input pe-10"
                       placeholder="9665xxxxxxxx"
                     />
                   </div>
@@ -863,12 +864,12 @@ export default function Landing() {
                     البريد الإلكتروني
                   </label>
                   <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       id="email"
                       name="email"
                       type="email"
-                      className="input pr-10"
+                      className="input pe-10"
                       placeholder="example@email.com"
                     />
                   </div>
@@ -895,13 +896,13 @@ export default function Landing() {
                     تاريخ الفعالية <span className="text-accent-600">*</span>
                   </label>
                   <div className="relative">
-                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Calendar className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       id="event_date"
                       name="event_date"
                       type="date"
                       required
-                      className="input pr-10"
+                      className="input pe-10"
                     />
                   </div>
                 </div>
@@ -912,13 +913,13 @@ export default function Landing() {
                     الموقع <span className="text-accent-600">*</span>
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <MapPin className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       id="location"
                       name="location"
                       type="text"
                       required
-                      className="input pr-10"
+                      className="input pe-10"
                       placeholder="المدينة / المنطقة"
                     />
                   </div>
@@ -1094,10 +1095,10 @@ export default function Landing() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="تواصل عبر واتساب"
-        className="fixed bottom-6 left-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all hover:bg-green-600 hover:scale-110"
+        className="fixed bottom-6 start-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all hover:bg-green-600 hover:scale-110"
       >
         <MessageCircle className="h-7 w-7" />
-        <span className="absolute -top-1 -right-1 flex h-4 w-4">
+        <span className="absolute -top-1 -end-1 flex h-4 w-4">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex h-4 w-4 rounded-full bg-green-500" />
         </span>

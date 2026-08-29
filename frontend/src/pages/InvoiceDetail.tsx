@@ -27,6 +27,11 @@ import {
   getInvoiceStatusLabel,
   getPaymentMethodLabel,
 } from '../lib/utils';
+import {
+  TOAST_DURATION_MS,
+  COPY_FEEDBACK_DURATION_MS,
+  DEFAULT_TAX_RATE_PERCENT,
+} from '../lib/constants';
 
 export interface InvoiceData {
   id: string;
@@ -87,7 +92,7 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
   const disc = Number(raw.discount ?? 0);
   const tax = Number(raw.tax ?? 0);
   const base = Math.max(0, sub - disc);
-  const taxRate = base > 0 ? Math.round((tax / base) * 1000) / 10 : 15;
+  const taxRate = base > 0 ? Math.round((tax / base) * 1000) / 10 : DEFAULT_TAX_RATE_PERCENT;
 
   return {
     id: raw.id,
@@ -175,7 +180,7 @@ export default function InvoiceDetail() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
   };
 
   const handlePrint = () => window.print();
@@ -185,7 +190,7 @@ export default function InvoiceDetail() {
     navigator.clipboard.writeText(data.invoiceNumber);
     setCopied(true);
     showToast('تم نسخ رقم الفاتورة بنجاح');
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
   };
 
   const handleShareWhatsApp = () => {

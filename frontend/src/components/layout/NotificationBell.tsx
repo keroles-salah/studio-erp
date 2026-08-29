@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, CheckCheck, Inbox } from 'lucide-react';
 import api from '../../lib/api';
 import { cn } from '../../lib/utils';
+import { NOTIFICATION_POLL_INTERVAL_MS, ONE_MINUTE_MS } from '../../lib/constants';
 
 interface NotificationItem {
   id: string;
@@ -26,7 +27,7 @@ const typeIcons: Record<string, string> = {
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(diff / 60000);
+  const min = Math.floor(diff / ONE_MINUTE_MS);
   if (min < 1) return 'الآن';
   if (min < 60) return `منذ ${min} دقيقة`;
   const hrs = Math.floor(min / 60);
@@ -62,7 +63,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchAll();
-    const iv = setInterval(fetchAll, 30000);
+    const iv = setInterval(fetchAll, NOTIFICATION_POLL_INTERVAL_MS);
     return () => clearInterval(iv);
   }, [fetchAll]);
 
