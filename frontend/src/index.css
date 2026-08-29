@@ -421,6 +421,96 @@
     padding-top: 1.2mm !important;
     padding-bottom: 1.2mm !important;
   }
+
+  /* A4 compact invoice: reserve vertical space for the full document. */
+  #invoice-print.invoice-print-document {
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+  }
+
+  #invoice-print.invoice-print-document > div:first-child {
+    height: 3mm !important;
+  }
+
+  #invoice-print.invoice-print-document > div:nth-child(2) {
+    padding: 3mm !important;
+    gap: 2.5mm !important;
+  }
+
+  #invoice-print.invoice-print-document .rounded-xl,
+  #invoice-print.invoice-print-document .rounded-lg {
+    border-radius: 2mm !important;
+  }
+
+  #invoice-print.invoice-print-document .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 2.5mm !important;
+  }
+
+  #invoice-print.invoice-print-document .space-y-3 > :not([hidden]) ~ :not([hidden]),
+  #invoice-print.invoice-print-document .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 2mm !important;
+  }
+
+  #invoice-print.invoice-print-document .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.5mm !important;
+  }
+
+  #invoice-print.invoice-print-document .p-3,
+  #invoice-print.invoice-print-document .p-2\.5 {
+    padding: 2mm !important;
+  }
+
+  #invoice-print.invoice-print-document .p-4,
+  #invoice-print.invoice-print-document .print\:p-2 {
+    padding: 2.5mm !important;
+  }
+
+  #invoice-print.invoice-print-document .gap-3 {
+    gap: 2.5mm !important;
+  }
+
+  #invoice-print.invoice-print-document .mb-1\.5 {
+    margin-bottom: 1mm !important;
+  }
+
+  #invoice-print.invoice-print-document .pb-4,
+  #invoice-print.invoice-print-document .print\:pb-2 {
+    padding-bottom: 2mm !important;
+  }
+
+  #invoice-print.invoice-print-document table {
+    font-size: 8.5px !important;
+  }
+
+  #invoice-print.invoice-print-document th,
+  #invoice-print.invoice-print-document td {
+    padding: 1.1mm 1.5mm !important;
+    line-height: 1.2 !important;
+  }
+
+  #invoice-print.invoice-print-document .h-14,
+  #invoice-print.invoice-print-document .w-14 {
+    height: 11mm !important;
+    width: 11mm !important;
+  }
+
+  #invoice-print.invoice-print-document .h-12,
+  #invoice-print.invoice-print-document .w-12 {
+    height: 9mm !important;
+    width: 9mm !important;
+  }
+
+  #invoice-print.invoice-print-document .text-base {
+    font-size: 12px !important;
+  }
+
+  #invoice-print.invoice-print-document .text-xl {
+    font-size: 16px !important;
+  }
+
+  #invoice-print.invoice-print-document .print\:hidden {
+    display: none !important;
+  }
 }
 
 /* ─── Print: reports ──────────────────────────────────────── */

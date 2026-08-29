@@ -357,7 +357,7 @@ export default function InvoiceDetail() {
       {/* Main Official Invoice Container */}
       <div
         id="invoice-print"
-        className="mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
+        className="invoice-print-document mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
       >
         {/* Luxury Top Header Border */}
         <div className="h-2 w-full bg-gradient-to-r from-slate-950 via-primary-600 to-amber-500 rounded-t-2xl print:rounded-none" />
@@ -704,23 +704,23 @@ export default function InvoiceDetail() {
           )}
 
           {/* Official Footer, Terms & Signatures */}
-          <div className="border-t border-slate-200 pt-3 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[11px]">
-              <div className="space-y-6">
+          <div className="border-t border-slate-200 pt-3 space-y-3 print:pt-2 print:space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[11px] print:grid-cols-2 print:gap-8 print:text-[9px]">
+              <div className="space-y-6 print:space-y-3">
                 <p className="font-bold text-slate-700">توقيع العميل / المستلم:</p>
-                <div className="w-40 border-b border-dashed border-slate-300" />
+                <div className="w-40 border-b border-dashed border-slate-300 print:w-28" />
               </div>
-              <div className="space-y-4 text-end">
+              <div className="space-y-4 text-end print:space-y-2">
                 <p className="font-bold text-slate-700">الختم والتوقيع المعتمد:</p>
                 <div className="flex items-center justify-end">
-                  <div className="relative grid h-14 w-14 place-items-center rounded-full border border-primary-500/40 bg-primary-50/30 text-[9px] font-bold text-primary-700">
+                  <div className="relative grid h-14 w-14 place-items-center rounded-full border border-primary-500/40 bg-primary-50/30 text-[9px] font-bold text-primary-700 print:h-9 print:w-9 print:text-[6px]">
                     <span className="text-center font-bold leading-tight">REAL HOME<br />ختم معتمد</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px] text-slate-400">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px] text-slate-400 print:pt-1 print:text-[8px]">
               <p className="min-w-0 break-words">© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
               <p className="flex min-w-0 max-w-full items-center gap-1 break-all font-mono">
                 <FileCheck className="h-3 w-3 shrink-0 text-slate-400" />
