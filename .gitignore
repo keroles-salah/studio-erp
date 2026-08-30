@@ -57,3 +57,10 @@ coverage/
 vercel-env-setup.txt
 
 .vercel
+
+# Environment files (contain real secrets — never commit)
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
