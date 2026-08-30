@@ -731,38 +731,59 @@
   #invoice-print-doc .ip-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 8mm;
-    padding-bottom: 3.5mm;
-    margin-bottom: 3.5mm;
+    align-items: center;
+    gap: 10mm;
+    padding-bottom: 4mm;
+    margin-bottom: 4mm;
     border-bottom: 0.3mm solid #d8dee8;
   }
 
+  /* Latin brand block stays left-aligned and reads as one unit. */
   #invoice-print-doc .ip-brand {
     display: flex;
-    align-items: center;
-    gap: 3mm;
+    align-items: flex-start;
+    gap: 3.5mm;
     min-width: 0;
+    text-align: left;
   }
 
   #invoice-print-doc .ip-logo {
-    width: 13mm;
-    height: 13mm;
+    width: 15mm;
+    height: 15mm;
     object-fit: contain;
     border-radius: 1mm;
+    flex-shrink: 0;
+  }
+
+  #invoice-print-doc .ip-brand-info {
+    min-width: 0;
   }
 
   #invoice-print-doc .ip-studio-name {
     margin: 0;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
+    letter-spacing: 0.3px;
     color: #152238;
+    white-space: nowrap;
+  }
+
+  #invoice-print-doc .ip-brand-rule {
+    display: block;
+    width: 18mm;
+    height: 0.7mm;
+    margin: 1.2mm 0 1.6mm;
+    background: #d69a2d;
   }
 
   #invoice-print-doc .ip-muted {
     margin: 0.6mm 0 0;
     color: #5b6b82;
     font-size: 9px;
+  }
+
+  #invoice-print-doc .ip-brand-address {
+    max-width: 68mm;
   }
 
   #invoice-print-doc .ip-meta {
@@ -893,33 +914,54 @@
   }
 
   #invoice-print-doc .ip-payments {
-    flex: 1.15;
+    flex: 1.1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   #invoice-print-doc .ip-section-title {
     margin: 0 0 1.5mm;
-    font-size: 9px;
+    padding-bottom: 1mm;
+    border-bottom: 0.2mm solid #e5eaf0;
+    font-size: 8px;
     font-weight: 800;
     color: #334155;
     text-transform: uppercase;
     letter-spacing: 0.4px;
   }
 
+  #invoice-print-doc .ip-payments .ip-row {
+    padding: 1.1mm 0;
+    border-bottom: 0.2mm dotted #e5eaf0;
+  }
+
+  #invoice-print-doc .ip-payments .ip-row strong {
+    color: #0f9d58;
+  }
+
   #invoice-print-doc .ip-verify {
-    margin-top: 2.5mm;
-    padding: 2mm 3mm;
+    margin-top: auto;
+    padding: 2.2mm 3mm;
     border: 0.25mm solid #d8dee8;
+    border-inline-start: 1.2mm solid #0f9d58;
     border-radius: 1.5mm;
+    background: #f8fbf9;
     font-size: 8px;
-    color: #5b6b82;
+    line-height: 1.5;
+    color: #4a5b70;
   }
 
   #invoice-print-doc .ip-totals {
-    flex: 0.9;
+    flex: 0.95;
     border: 0.25mm solid #d8dee8;
     border-radius: 1.5mm;
-    padding: 2.5mm 3mm;
+    padding: 3mm;
+    background: #fcfdfe;
+  }
+
+  #invoice-print-doc .ip-totals .ip-row {
+    padding: 0.8mm 0;
   }
 
   #invoice-print-doc .ip-grand {
@@ -927,8 +969,8 @@
     justify-content: space-between;
     align-items: center;
     gap: 3mm;
-    margin: 1.5mm 0;
-    padding: 2mm 3mm;
+    margin: 2mm 0;
+    padding: 2.4mm 3mm;
     background: #152238;
     color: #ffffff;
     border-radius: 1mm;
@@ -966,8 +1008,16 @@
     display: flex;
     justify-content: space-between;
     gap: 8mm;
-    padding-top: 3mm;
+    padding-top: 4mm;
     border-top: 0.3mm solid #d8dee8;
+  }
+
+  #invoice-print-doc .ip-footer > div {
+    flex: 1;
+  }
+
+  #invoice-print-doc .ip-footer > div:last-child {
+    text-align: end;
   }
 
   #invoice-print-doc .ip-footer-label {
@@ -978,13 +1028,19 @@
   }
 
   #invoice-print-doc .ip-sign-line {
-    width: 45mm;
-    margin-top: 8mm;
-    border-bottom: 0.3mm dashed #9aa7b8;
+    width: 48mm;
+    margin-top: 9mm;
+    border-bottom: 0.3mm solid #b6c0cf;
+  }
+
+  #invoice-print-doc .ip-footer > div:last-child .ip-sign-line {
+    margin-inline-start: auto;
   }
 
   #invoice-print-doc .ip-copyright {
-    margin-top: 3mm;
+    margin-top: 4mm;
+    padding-top: 2mm;
+    border-top: 0.2mm solid #eef1f5;
     text-align: center;
     font-size: 8px;
     color: #9aa7b8;

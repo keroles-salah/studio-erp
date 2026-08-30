@@ -643,7 +643,7 @@ export default function InvoiceDetail() {
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-slate-600">
-                <span>ضريبة القيمة المضافة ({data.taxRate}%):</span>
+                <span>ضريبة القيمة المضافة{data.taxAmount > 0 ? ` (${data.taxRate}%)` : ' (معفاة)'}:</span>
                 <span className="font-mono font-medium text-slate-800">{formatCurrency(data.taxAmount)}</span>
               </div>
 
@@ -737,28 +737,29 @@ export default function InvoiceDetail() {
           <div className="ip-accent" />
           <div className="ip-body">
             <div className="ip-header">
-              <div className="ip-brand">
-                {data.studio.logo && (
-                  <img src={data.studio.logo} alt="Logo" className="ip-logo" />
-                )}
-                <div className="ip-brand-info">
-                  <h1 className="ip-studio-name">{data.studio.name}</h1>
-                  <p className="ip-muted" dir="ltr">
-                    {[data.studio.vatNumber && `VAT: ${data.studio.vatNumber}`, data.studio.crNumber && `CR: ${data.studio.crNumber}`].filter(Boolean).join('  ·  ')}
-                  </p>
-                  <p className="ip-muted">{data.studio.address}</p>
-                  <p className="ip-muted" dir="ltr">{data.studio.phone}</p>
-                </div>
-              </div>
               <div className="ip-meta">
                 <div className="ip-title">
                   <span>فاتورة ضريبية رسمية</span>
                   <span dir="ltr">TAX INVOICE</span>
                 </div>
                 <div className="ip-row"><span>رقم الفاتورة</span><strong dir="ltr">{data.invoiceNumber}</strong></div>
-                <div className="ip-row"><span>التاريخ</span><strong>{formatDate(data.date)}</strong></div>
-                {data.dueDate && <div className="ip-row"><span>الاستحقاق</span><strong>{formatDate(data.dueDate)}</strong></div>}
+                <div className="ip-row"><span>تاريخ الإصدار</span><strong>{formatDate(data.date)}</strong></div>
+                {data.dueDate && <div className="ip-row"><span>تاريخ الاستحقاق</span><strong>{formatDate(data.dueDate)}</strong></div>}
                 <div className="ip-status">{getInvoiceStatusLabel(data.status)}</div>
+              </div>
+              <div className="ip-brand" dir="ltr">
+                {data.studio.logo && (
+                  <img src={data.studio.logo} alt="Logo" className="ip-logo" />
+                )}
+                <div className="ip-brand-info">
+                  <h1 className="ip-studio-name">{data.studio.name}</h1>
+                  <span className="ip-brand-rule" />
+                  <p className="ip-muted">
+                    {[data.studio.vatNumber && `VAT ${data.studio.vatNumber}`, data.studio.crNumber && `CR ${data.studio.crNumber}`].filter(Boolean).join('  ·  ')}
+                  </p>
+                  <p className="ip-muted">{data.studio.phone}</p>
+                  <p className="ip-muted ip-brand-address">{data.studio.address}</p>
+                </div>
               </div>
             </div>
 
@@ -821,11 +822,17 @@ export default function InvoiceDetail() {
               </div>
               <div className="ip-totals">
                 <div className="ip-row"><span>المجموع الفرعي</span><strong>{formatCurrency(data.subtotal)}</strong></div>
-                {data.discount > 0 && <div className="ip-row"><span>الخصم المطبق</span><strong>- {formatCurrency(data.discount)}</strong></div>}
-                <div className="ip-row"><span>ضريبة القيمة المضافة ({data.taxRate}%)</span><strong>{formatCurrency(data.taxAmount)}</strong></div>
+                {data.discount > 0 && (
+                  <div className="ip-row"><span>الخصم المطبق</span><strong>- {formatCurrency(data.discount)}</strong></div>
+                )}
+                <div className="ip-row"><span>الوعاء الضريبي</span><strong>{formatCurrency(Math.max(0, data.subtotal - data.discount))}</strong></div>
+                <div className="ip-row">
+                  <span>ضريبة القيمة المضافة{data.taxAmount > 0 ? ` (${data.taxRate}%)` : ' (معفاة)'}</span>
+                  <strong>{formatCurrency(data.taxAmount)}</strong>
+                </div>
                 <div className="ip-grand"><span>الإجمالي شامل الضريبة</span><strong>{formatCurrency(data.total)}</strong></div>
-                <div className="ip-row ip-paid"><span>المسدد</span><strong>{formatCurrency(data.paid)}</strong></div>
-                <div className="ip-row ip-remaining"><span>المتبقي</span><strong>{formatCurrency(data.remaining)}</strong></div>
+                <div className="ip-row ip-paid"><span>المبلغ المسدد</span><strong>{formatCurrency(data.paid)}</strong></div>
+                <div className="ip-row ip-remaining"><span>المبلغ المتبقي</span><strong>{formatCurrency(data.remaining)}</strong></div>
               </div>
             </div>
 
@@ -842,6 +849,7 @@ export default function InvoiceDetail() {
               </div>
               <div>
                 <p className="ip-footer-label">الختم والتوقيع المعتمد</p>
+                <div className="ip-sign-line" />
               </div>
             </div>
             <div className="ip-copyright">© {new Date().getFullYear()} {data.studio.name} · جميع الحقوق محفوظة</div>
