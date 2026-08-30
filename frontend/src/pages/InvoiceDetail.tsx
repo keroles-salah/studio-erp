@@ -357,7 +357,7 @@ export default function InvoiceDetail() {
       {/* Main Official Invoice Container */}
       <div
         id="invoice-print"
-        className="invoice-print-document mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
+        className="invoice-print-document print:hidden mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
       >
         {/* Luxury Top Header Border */}
         <div className="h-2 w-full bg-gradient-to-r from-slate-950 via-primary-600 to-amber-500 rounded-t-2xl print:rounded-none" />
@@ -727,6 +727,124 @@ export default function InvoiceDetail() {
                 <span>Doc Ref: {data.id}</span>
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Print-only invoice document (flat, single-page) */}
+      <div id="invoice-print-doc" className="hidden print:block">
+        <div className="ip-doc" dir="rtl">
+          <div className="ip-accent" />
+          <div className="ip-body">
+            <div className="ip-header">
+              <div className="ip-brand">
+                {data.studio.logo && (
+                  <img src={data.studio.logo} alt="Logo" className="ip-logo" />
+                )}
+                <div className="ip-brand-info">
+                  <h1 className="ip-studio-name">{data.studio.name}</h1>
+                  <p className="ip-muted" dir="ltr">
+                    {[data.studio.vatNumber && `VAT: ${data.studio.vatNumber}`, data.studio.crNumber && `CR: ${data.studio.crNumber}`].filter(Boolean).join('  ·  ')}
+                  </p>
+                  <p className="ip-muted">{data.studio.address}</p>
+                  <p className="ip-muted" dir="ltr">{data.studio.phone}</p>
+                </div>
+              </div>
+              <div className="ip-meta">
+                <div className="ip-title">
+                  <span>فاتورة ضريبية رسمية</span>
+                  <span dir="ltr">TAX INVOICE</span>
+                </div>
+                <div className="ip-row"><span>رقم الفاتورة</span><strong dir="ltr">{data.invoiceNumber}</strong></div>
+                <div className="ip-row"><span>التاريخ</span><strong>{formatDate(data.date)}</strong></div>
+                {data.dueDate && <div className="ip-row"><span>الاستحقاق</span><strong>{formatDate(data.dueDate)}</strong></div>}
+                <div className="ip-status">{getInvoiceStatusLabel(data.status)}</div>
+              </div>
+            </div>
+
+            <div className="ip-parties">
+              <div className="ip-party">
+                <h3>فاتورة إلى · Billed To</h3>
+                <p className="ip-party-name">{data.customer.name}</p>
+                {data.customer.phone && <p dir="ltr">{data.customer.phone}</p>}
+                {data.customer.email && <p dir="ltr">{data.customer.email}</p>}
+                {data.customer.address && <p>{data.customer.address}</p>}
+              </div>
+              <div className="ip-party">
+                <h3>بيانات التحويل · Bank Details</h3>
+                <div className="ip-row"><span>البنك</span><strong>{data.studio.bankName}</strong></div>
+                <div className="ip-row"><span>الآيبان IBAN</span><strong dir="ltr">{data.studio.iban}</strong></div>
+              </div>
+            </div>
+
+            <table className="ip-table">
+              <thead>
+                <tr>
+                  <th className="ip-col-num">#</th>
+                  <th>الخدمة / البند</th>
+                  <th className="ip-col-num">الكمية</th>
+                  <th className="ip-col-amount">سعر الوحدة</th>
+                  {data.discount > 0 && <th className="ip-col-amount">الخصم</th>}
+                  <th className="ip-col-amount">المجموع</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items?.map((item, idx) => (
+                  <tr key={item.id || idx}>
+                    <td className="ip-col-num">{idx + 1}</td>
+                    <td>{item.description}</td>
+                    <td className="ip-col-num">{item.quantity}</td>
+                    <td className="ip-col-amount">{formatCurrency(item.unitPrice)}</td>
+                    {data.discount > 0 && (
+                      <td className="ip-col-amount">{item.discount ? `- ${formatCurrency(item.discount)}` : '—'}</td>
+                    )}
+                    <td className="ip-col-amount ip-bold">{formatCurrency(item.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="ip-summary">
+              <div className="ip-payments">
+                {data.payments?.length > 0 && (
+                  <>
+                    <h3 className="ip-section-title">سجل الدفعات</h3>
+                    {data.payments.map((p) => (
+                      <div key={p.id} className="ip-row">
+                        <span>{getPaymentMethodLabel(p.method)} · {formatDate(p.date)}</span>
+                        <strong>{formatCurrency(p.amount)}</strong>
+                      </div>
+                    ))}
+                  </>
+                )}
+                <div className="ip-verify">فاتورة إلكترونية معتمدة — موثقة إلكترونياً وتخضع للأنظمة الضريبية المعمول بها.</div>
+              </div>
+              <div className="ip-totals">
+                <div className="ip-row"><span>المجموع الفرعي</span><strong>{formatCurrency(data.subtotal)}</strong></div>
+                {data.discount > 0 && <div className="ip-row"><span>الخصم المطبق</span><strong>- {formatCurrency(data.discount)}</strong></div>}
+                <div className="ip-row"><span>ضريبة القيمة المضافة ({data.taxRate}%)</span><strong>{formatCurrency(data.taxAmount)}</strong></div>
+                <div className="ip-grand"><span>الإجمالي شامل الضريبة</span><strong>{formatCurrency(data.total)}</strong></div>
+                <div className="ip-row ip-paid"><span>المسدد</span><strong>{formatCurrency(data.paid)}</strong></div>
+                <div className="ip-row ip-remaining"><span>المتبقي</span><strong>{formatCurrency(data.remaining)}</strong></div>
+              </div>
+            </div>
+
+            {data.notes && (
+              <div className="ip-notes">
+                <strong>ملاحظات:</strong> <span>{data.notes}</span>
+              </div>
+            )}
+
+            <div className="ip-footer">
+              <div>
+                <p className="ip-footer-label">توقيع العميل / المستلم</p>
+                <div className="ip-sign-line" />
+              </div>
+              <div>
+                <p className="ip-footer-label">الختم والتوقيع المعتمد</p>
+              </div>
+            </div>
+            <div className="ip-copyright">© {new Date().getFullYear()} {data.studio.name} · جميع الحقوق محفوظة</div>
           </div>
         </div>
       </div>
