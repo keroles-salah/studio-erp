@@ -72,14 +72,6 @@ export const DROPDOWN_PAGE_SIZE = 50;
 export const LARGE_PAGE_SIZE = 100;
 
 /* ----------------------------------------------------------------------------
- * Finance
- * ------------------------------------------------------------------------- */
-
-/** Fallback VAT / tax rate (%) used when we cannot derive it from an
- *  invoice's base/tax amounts. */
-export const DEFAULT_TAX_RATE_PERCENT = 15;
-
-/* ----------------------------------------------------------------------------
  * Number formatting (Reports)
  * ------------------------------------------------------------------------- */
 

@@ -59,7 +59,6 @@ interface TotalsInput {
   services: { quantity: number; unitPrice: number; discount: number }[];
   equipment: { quantity: number; unitPrice: number; discount?: number }[];
   discount: number;
-  taxRate: number;
 }
 
 interface TotalsResult {
@@ -70,12 +69,12 @@ interface TotalsResult {
 }
 
 /**
- * Calculate booking totals from services + equipment, applying discount and tax.
+ * Calculate booking totals from services + equipment, applying discount.
+ * No tax is applied to bookings.
  *
  * - subtotal = sum(service totals) + sum(equipment revenue totals)
  * - discount applied to subtotal (flat amount)
- * - tax = (subtotal - discount) * taxRate / 100
- * - total = subtotal - discount + tax
+ * - total = subtotal - discount
  */
 function calculateTotals(input: TotalsInput): TotalsResult {
   const servicesSubtotal = input.services.reduce((sum, s) => {
@@ -93,33 +92,16 @@ function calculateTotals(input: TotalsInput): TotalsResult {
   // Cap discount to not exceed subtotal
   const effectiveDiscount = Math.min(input.discount, subtotal);
 
-  const taxableBase = subtotal - effectiveDiscount;
-  const tax = Math.max(0, (taxableBase * input.taxRate) / 100);
-  const total = taxableBase + tax;
+  const total = subtotal - effectiveDiscount;
 
   return {
     subtotal: Math.round(subtotal * 100) / 100,
     discount: Math.round(effectiveDiscount * 100) / 100,
-    tax: Math.round(tax * 100) / 100,
+    tax: 0,
     total: Math.round(total * 100) / 100,
   };
 }
 
-
-/**
- * Read studio tax settings: { enabled, rate }.
- * Single source of truth for tax on bookings (client-sent taxRate is ignored).
- */
-async function getStudioTaxConfig(): Promise<{ enabled: boolean; rate: number }> {
-  const rows = await prisma.setting.findMany({
-    where: { key: { in: ['studio.tax_rate', 'studio.tax_enabled'] } },
-  });
-  const map: Record<string, string> = {};
-  for (const r of rows) map[r.key] = r.value;
-  const enabled = map['studio.tax_enabled'] !== 'false'; // default true
-  const rate = map['studio.tax_rate'] === undefined ? 0 : Number(map['studio.tax_rate']);
-  return { enabled, rate: Number.isFinite(rate) && rate > 0 ? rate : 0 };
-}
 
 /**
  * Check if any equipment in the list is already booked on the same event date.
@@ -476,13 +458,11 @@ export const bookingsService = {
       }
     }
 
-    // 5. Calculate totals (tax rate always from studio settings)
-    const taxConfig = await getStudioTaxConfig();
+    // 5. Calculate totals (no tax)
     const totals = calculateTotals({
       services: serviceItems,
       equipment: equipmentItems,
       discount: bookingFields.discount,
-      taxRate: taxConfig.enabled ? taxConfig.rate : 0,
     });
 
     // 6. Execute everything in a transaction
@@ -518,7 +498,7 @@ export const bookingsService = {
           remainingAmount: Math.max(0, totals.total - input.depositPaid),
           depositRequired: bookingFields.depositRequired,
           depositPaid: bookingFields.depositPaid,
-          taxRate: taxConfig.enabled ? taxConfig.rate : 0,
+          taxRate: 0,
           depositDate: input.depositPaid > 0 ? new Date() : null,
           notes: bookingFields.notes ?? null,
           createdById: userId,
@@ -685,11 +665,7 @@ export const bookingsService = {
     // Recalculate totals if relevant fields changed
     let totals: { subtotal: number; discount: number; tax: number; total: number } | undefined;
 
-    if (
-      input.discount !== undefined ||
-      input.taxRate !== undefined ||
-      input.event !== undefined
-    ) {
+    if (input.discount !== undefined || input.event !== undefined) {
       const servicesForCalc = existing.services.map((s) => ({
         quantity: s.quantity,
         unitPrice: Number(s.unitPrice),
@@ -701,12 +677,10 @@ export const bookingsService = {
         unitPrice: Number(e.unitPrice),
       }));
 
-      const taxConfig = await getStudioTaxConfig();
       totals = calculateTotals({
         services: servicesForCalc,
         equipment: equipmentForCalc,
         discount: input.discount ?? Number(existing.discount),
-        taxRate: taxConfig.enabled ? taxConfig.rate : 0,
       });
     }
 

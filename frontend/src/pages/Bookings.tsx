@@ -70,18 +70,6 @@ export default function Bookings() {
     setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
   };
 
-  const { data: settings } = useQuery<Record<string, any>>({
-    queryKey: ['settings-tax'],
-    queryFn: async () => {
-      const res = await api.get('/settings/studio');
-      return res.data.data || {};
-    },
-  });
-  const taxEnabled = settings?.finance?.['studio.tax_enabled'] === 'true';
-  const rawTaxRate = Number(settings?.finance?.['studio.tax_rate']);
-  // Default tax rate is 0
-  const taxRate = taxEnabled ? (Number.isFinite(rawTaxRate) && rawTaxRate >= 0 ? rawTaxRate : 0) : 0;
-
   // Payment methods come from settings (enabled only), with a safe fallback
   const { data: paymentMethodsData } = useQuery({
     queryKey: ['payment-methods'],
@@ -100,11 +88,10 @@ export default function Bookings() {
     const subtotal = equipmentSubtotal;
     const discountVal = Number(discount) || 0;
     const effectiveDiscount = Math.min(discountVal, subtotal);
-    const tax = Math.max(0, (subtotal - effectiveDiscount) * taxRate / 100);
-    const total = subtotal - effectiveDiscount + tax;
+    const total = subtotal - effectiveDiscount;
     const r2 = (n: number) => Math.round(n * 100) / 100;
-    return { subtotal: r2(subtotal), discount: r2(effectiveDiscount), tax: r2(tax), total: r2(total) };
-  }, [equipment, discount, taxRate]);
+    return { subtotal: r2(subtotal), discount: r2(effectiveDiscount), tax: 0, total: r2(total) };
+  }, [equipment, discount]);
 
   const depositRequired = Math.round(totals.total * (Number(depositPercent) || 0) / 100);
 
@@ -217,7 +204,6 @@ export default function Bookings() {
         depositPaid: Number(depositPaid) || 0,
         discount: Number(discount) || 0,
         notes: notes.trim() || null,
-        taxRate: taxEnabled ? rawTaxRate : 0,
         ...(paymentMethod ? { depositPaymentMethod: paymentMethod } : {}),
       });
     },
@@ -466,7 +452,6 @@ export default function Bookings() {
               <div className="bg-slate-50 rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between"><span className="text-slate-500">{t('booking.subtotal')}</span><span className="font-medium text-slate-700">{formatCurrency(totals.subtotal)}</span></div>
                 <div className="flex items-center justify-between"><span className="text-slate-500">{t('booking.discount')}</span><span className="font-medium text-red-600">-{formatCurrency(totals.discount)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-slate-500">{t('booking.tax')} ({taxRate}%)</span><span className="font-medium text-slate-700">{formatCurrency(totals.tax)}</span></div>
                 <div className="flex items-center justify-between border-t border-slate-200 pt-2"><span className="font-semibold text-slate-900">{t('booking.total')}</span><span className="text-lg font-bold text-primary-700">{formatCurrency(totals.total)}</span></div>
               </div>
             </div>

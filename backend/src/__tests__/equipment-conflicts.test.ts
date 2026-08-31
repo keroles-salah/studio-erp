@@ -102,7 +102,6 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
         depositRequired: 250,
         depositPaid: 0,
         discount: 0,
-        taxRate: 0,
       },
       testUser.id,
     );
@@ -134,7 +133,6 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
           depositRequired: 250,
           depositPaid: 0,
           discount: 0,
-          taxRate: 0,
         },
         testUser.id,
       ),
@@ -165,7 +163,6 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
         depositRequired: 250,
         depositPaid: 0,
         discount: 0,
-        taxRate: 0,
       },
       testUser.id,
     );
@@ -191,7 +188,6 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
           depositRequired: 0,
           depositPaid: 0,
           discount: 0,
-          taxRate: 0,
         },
         testUser.id,
       ),
@@ -229,7 +225,6 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
         depositRequired: 0,
         depositPaid: 0,
         discount: 0,
-        taxRate: 0,
       },
       testUser.id,
     );

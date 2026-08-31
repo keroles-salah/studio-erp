@@ -36,8 +36,7 @@ const FIELD_TO_SETTING: Record<string, { key: string; category: string }> = {
   address: { key: 'studio.address', category: 'studio' },
   website: { key: 'studio.website', category: 'studio' },
 
-  // Tax & Legal
-  vatNumber: { key: 'studio.vat_number', category: 'studio' },
+  // Legal
   crNumber: { key: 'studio.cr_number', category: 'studio' },
 
   // Bank & Payment
@@ -53,10 +52,8 @@ const FIELD_TO_SETTING: Record<string, { key: string; category: string }> = {
   // Finance
   currency: { key: 'studio.currency', category: 'finance' },
   currencySymbol: { key: 'studio.currency_symbol', category: 'finance' },
-  taxRate: { key: 'studio.tax_rate', category: 'finance' },
   invoicePrefix: { key: 'studio.invoice_prefix', category: 'finance' },
   bookingPrefix: { key: 'studio.booking_prefix', category: 'finance' },
-  taxEnabled: { key: 'studio.tax_enabled', category: 'finance' },
 
   // App & Localization
   defaultLanguage: { key: 'app.default_language', category: 'app' },
@@ -89,7 +86,6 @@ export default function Settings() {
       for (const [field, { key }] of Object.entries(FIELD_TO_SETTING)) {
         normalized[field] = flat[key] ?? '';
       }
-      normalized.taxEnabled = flat['studio.tax_enabled'] === 'true';
       return normalized;
     },
   });
@@ -102,13 +98,11 @@ export default function Settings() {
     const fd = new FormData(e.currentTarget);
     const formValues = Object.fromEntries(fd) as Record<string, string>;
 
-    const settingsPayload = Object.entries(FIELD_TO_SETTING).map(([field, { key, category }]) => {
-      let value = formValues[field] ?? '';
-      if (field === 'taxEnabled') {
-        value = formValues[field] ? 'true' : 'false';
-      }
-      return { key, value, category };
-    });
+    const settingsPayload = Object.entries(FIELD_TO_SETTING).map(([field, { key, category }]) => ({
+      key,
+      value: formValues[field] ?? '',
+      category,
+    }));
 
     try {
       await api.patch('/settings', { settings: settingsPayload });
@@ -272,17 +266,6 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <label className="label">الرقم الضريبي (VAT Number)</label>
-                    <input
-                      name="vatNumber"
-                      defaultValue={settings?.vatNumber}
-                      placeholder="300984729100003"
-                      className="input font-mono"
-                      dir="ltr"
-                    />
-                  </div>
-
-                  <div>
                     <label className="label">رقم السجل التجاري (CR Number)</label>
                     <input
                       name="crNumber"
@@ -441,7 +424,7 @@ export default function Settings() {
                     الإعدادات المالية والضرائب
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    ضبط العملة الافتراضية، نسبة الضريبة، وبادئات أرقام الفواتير والحجوزات
+                    ضبط العملة الافتراضية وبادئات أرقام الفواتير والحجوزات
                   </p>
                 </div>
 
@@ -472,17 +455,6 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <label className="label">نسبة ضريبة القيمة المضافة (٪)</label>
-                    <input
-                      name="taxRate"
-                      type="number"
-                      step="0.1"
-                      defaultValue={settings?.taxRate ?? 15}
-                      className="input font-mono font-bold"
-                    />
-                  </div>
-
-                  <div>
                     <label className="label">بادئة أرقام الفواتير (Prefix)</label>
                     <input
                       name="invoicePrefix"
@@ -502,19 +474,6 @@ export default function Settings() {
                       className="input font-mono uppercase"
                       dir="ltr"
                     />
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-6">
-                    <input
-                      type="checkbox"
-                      name="taxEnabled"
-                      defaultChecked={settings?.taxEnabled}
-                      id="taxEnabled"
-                      className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label htmlFor="taxEnabled" className="text-sm font-semibold text-slate-800 cursor-pointer">
-                      تفعيل احتساب الضريبة على الفواتير
-                    </label>
                   </div>
                 </div>
               </div>

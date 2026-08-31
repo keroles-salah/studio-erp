@@ -70,7 +70,6 @@ export const createBookingSchema = z
     depositRequired: z.number().min(0).default(0),
     depositPaid: z.number().min(0).default(0),
     notes: z.string().optional().nullable(),
-    taxRate: z.number().min(0).max(100).default(15),
     discount: z.number().min(0).default(0),
     depositPaymentMethod: z.string().max(50).optional(),
   })
@@ -102,7 +101,6 @@ export const updateBookingSchema = z
     nextPaymentDate: z.coerce.date().optional().nullable(),
     notes: z.string().optional().nullable(),
     discount: z.number().min(0).optional(),
-    taxRate: z.number().min(0).max(100).optional(),
     event: eventSchema.partial().optional(),
   })
   .refine(

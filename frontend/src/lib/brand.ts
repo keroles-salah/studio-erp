@@ -27,9 +27,6 @@ export const BRAND_WEBSITE = 'www.realhomelens.com';
 /** Fallback city/region for display. */
 export const BRAND_LOCATION = 'الرياض، المملكة العربية السعودية';
 
-/** Fallback VAT registration number (display on invoices). */
-export const BRAND_VAT_NUMBER = '300984729100003';
-
 /** Fallback CR (Commercial Registration) number. */
 export const BRAND_CR_NUMBER = '1010894721';
 

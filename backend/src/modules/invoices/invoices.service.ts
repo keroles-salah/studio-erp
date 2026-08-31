@@ -39,37 +39,23 @@ export class InvoicesService {
   }
 
 
-  // ── Read studio tax settings (single source of truth) ──
-  private async getTaxConfig(): Promise<{ enabled: boolean; rate: number }> {
-    const keys = ['studio.tax_rate', 'studio.tax_enabled'];
-    const rows = await prisma.setting.findMany({ where: { key: { in: keys } } });
-    const map: Record<string, string> = {};
-    for (const r of rows) map[r.key] = r.value;
-    const enabled = map['studio.tax_enabled'] !== 'false'; // default true
-    const rate = map['studio.tax_rate'] === undefined ? 0 : Number(map['studio.tax_rate']);
-    return { enabled, rate: Number.isFinite(rate) && rate > 0 ? rate : 0 };
-  }
-
-  // ─── Calculate invoice totals from items ───────────────────
+  // ─── Calculate invoice totals from items (no tax) ──────────
 
   calculateInvoiceTotals(
     items: { quantity: number; unitPrice: number; discount: number; total: number }[],
     discount: number = 0,
-    taxRate: number = 0,
   ): { subtotal: number; discount: number; tax: number; total: number } {
     const subtotal = items.reduce((sum, item) => {
       const itemTotal = item.total || (item.quantity * item.unitPrice - item.discount);
       return sum + itemTotal;
     }, 0);
 
-    const discountedSubtotal = subtotal - discount;
-    const tax = discountedSubtotal * (taxRate / 100);
-    const total = discountedSubtotal + tax;
+    const total = subtotal - discount;
 
     return {
       subtotal: Math.round(subtotal * 100) / 100,
       discount: Math.round(discount * 100) / 100,
-      tax: Math.round(tax * 100) / 100,
+      tax: 0,
       total: Math.round(total * 100) / 100,
     };
   }
@@ -272,12 +258,9 @@ export class InvoicesService {
     );
     const computedDiscount = Math.min(data.discount, computedSubtotal);
 
-    // Tax always from studio settings, never from the client payload
-    const taxConfig = await this.getTaxConfig();
-    const effectiveTaxRate = taxConfig.enabled ? taxConfig.rate : 0;
-    const computedTax =
-      Math.round((computedSubtotal - computedDiscount) * (effectiveTaxRate / 100) * 100) / 100;
-    const computedTotal = Math.round((computedSubtotal - computedDiscount + computedTax) * 100) / 100;
+    // No tax applied to invoices
+    const computedTax = 0;
+    const computedTotal = Math.round((computedSubtotal - computedDiscount) * 100) / 100;
 
     // Over-billing guard: sum of non-cancelled invoices for a linked booking
     // must not exceed the booking total.
@@ -369,7 +352,7 @@ export class InvoicesService {
     if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
 
     // Financial fields: keep existing values unless the client provides a
-    // discount change, in which case tax is recomputed from studio settings.
+    // discount change. No tax is applied to invoices.
     if (data.discount !== undefined) {
       const current = await prisma.invoice.findUniqueOrThrow({
         where: { id },
@@ -377,14 +360,10 @@ export class InvoicesService {
       });
       const subtotal = current.subtotal.toNumber();
       const newDiscount = Math.min(Math.max(0, data.discount), subtotal);
-      const taxConfig = await this.getTaxConfig();
-      const effectiveTaxRate = taxConfig.enabled ? taxConfig.rate : 0;
-      const newTax =
-        Math.round((subtotal - newDiscount) * (effectiveTaxRate / 100) * 100) / 100;
-      const newTotal = Math.round((subtotal - newDiscount + newTax) * 100) / 100;
+      const newTotal = Math.round((subtotal - newDiscount) * 100) / 100;
 
       updateData.discount = newDiscount;
-      updateData.tax = newTax;
+      updateData.tax = 0;
       updateData.total = newTotal;
       updateData.remainingAmount = Math.max(0, newTotal - current.paidAmount.toNumber());
     }

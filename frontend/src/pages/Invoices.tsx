@@ -97,25 +97,6 @@ export default function Invoices() {
   const [invoiceDate, setInvoiceDate] = useState(todayLocalDate());
   const [dueDate, setDueDate] = useState('');
   const [invoiceDiscount, setInvoiceDiscount] = useState(0);
-  const [taxRate, setTaxRate] = useState(0);
-  const { data: settings } = useQuery<Record<string, any>>({
-    queryKey: ['settings-tax'],
-    queryFn: async () => {
-      const res = await api.get('/settings/studio');
-      return res.data.data || {};
-    },
-  });
-  useEffect(() => {
-    const enabled = settings?.finance?.['studio.tax_enabled'] === 'true';
-    const r = Number(settings?.finance?.['studio.tax_rate']);
-    if (!enabled) {
-      setTaxRate(0);
-    } else if (Number.isFinite(r) && r >= 0) {
-      setTaxRate(r);
-    } else {
-      setTaxRate(0);
-    }
-  }, [settings]);
   const [notes, setNotes] = useState('');
   const [rows, setRows] = useState<InvoiceRow[]>([emptyRow()]);
 
@@ -214,8 +195,7 @@ export default function Invoices() {
     0,
   );
   const disc = Math.min(invoiceDiscount || 0, subtotal);
-  const taxAmount = subtotal > 0 ? Math.round(((subtotal - disc) * (taxRate || 0)) / 100 * 100) / 100 : 0;
-  const grandTotal = Math.round((subtotal - disc + taxAmount) * 100) / 100;
+  const grandTotal = Math.round((subtotal - disc) * 100) / 100;
 
   const updateRow = (i: number, patch: Partial<InvoiceRow>) => {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -567,15 +547,11 @@ export default function Invoices() {
                 </div>
               </div>
 
-              {/* Discount + Tax */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Discount + Notes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">خصم الفاتورة</label>
                   <input type="number" min="0" step="0.01" value={invoiceDiscount} onChange={(e) => setInvoiceDiscount(Number(e.target.value))} className="input" />
-                </div>
-                <div>
-                  <label className="label">نسبة الضريبة (%)</label>
-                  <input type="number" min="0" max="100" step="0.5" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value))} className="input" />
                 </div>
                 <div>
                   <label className="label">ملاحظات</label>
@@ -587,7 +563,6 @@ export default function Invoices() {
               <div className="rounded-xl bg-primary-50/50 p-4 space-y-1.5 text-sm">
                 <div className="flex justify-between"><span className="text-slate-500">المجموع الفرعي</span><span className="font-semibold">{formatCurrency(Math.round(subtotal * 100) / 100)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">الخصم</span><span className="font-semibold text-emerald-600">- {formatCurrency(disc)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">الضريبة ({taxRate}%)</span><span className="font-semibold">{formatCurrency(taxAmount)}</span></div>
                 <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base"><span className="font-bold text-slate-900">الإجمالي</span><span className="font-bold text-primary-700">{formatCurrency(grandTotal)}</span></div>
               </div>
 

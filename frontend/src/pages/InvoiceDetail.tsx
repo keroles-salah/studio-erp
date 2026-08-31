@@ -30,14 +30,12 @@ import {
 import {
   TOAST_DURATION_MS,
   COPY_FEEDBACK_DURATION_MS,
-  DEFAULT_TAX_RATE_PERCENT,
 } from '../lib/constants';
 import {
   BRAND_NAME,
   BRAND_PHONE,
   BRAND_EMAIL,
   BRAND_WEBSITE,
-  BRAND_VAT_NUMBER,
   BRAND_CR_NUMBER,
   BRAND_BANK_NAME,
   BRAND_IBAN,
@@ -52,8 +50,6 @@ export interface InvoiceData {
   status: string;
   subtotal: number;
   discount: number;
-  taxRate: number;
-  taxAmount: number;
   total: number;
   paid: number;
   remaining: number;
@@ -74,7 +70,6 @@ export interface InvoiceData {
     email: string;
     address: string;
     website: string;
-    vatNumber: string;
     crNumber: string;
     bankName: string;
     accountName: string;
@@ -101,9 +96,6 @@ export interface InvoiceData {
 function mapInvoice(raw: any, settings: any): InvoiceData {
   const sub = Number(raw.subtotal ?? 0);
   const disc = Number(raw.discount ?? 0);
-  const tax = Number(raw.tax ?? 0);
-  const base = Math.max(0, sub - disc);
-  const taxRate = base > 0 ? Math.round((tax / base) * 1000) / 10 : DEFAULT_TAX_RATE_PERCENT;
 
   return {
     id: raw.id,
@@ -113,8 +105,6 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
     status: raw.status,
     subtotal: sub,
     discount: disc,
-    taxRate,
-    taxAmount: tax,
     total: Number(raw.total ?? 0),
     paid: Number(raw.paidAmount ?? 0),
     remaining: Number(raw.remainingAmount ?? 0),
@@ -135,7 +125,6 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
       email: settings?.['studio.email'] || BRAND_EMAIL,
       address: settings?.['studio.address'] || BRAND_LOCATION,
       website: settings?.['studio.website'] || BRAND_WEBSITE,
-      vatNumber: settings?.['studio.vat_number'] || BRAND_VAT_NUMBER,
       crNumber: settings?.['studio.cr_number'] || BRAND_CR_NUMBER,
       bankName: settings?.['studio.bank_name'] || BRAND_BANK_NAME,
       accountName: settings?.['studio.account_name'] || settings?.['studio.name'] || BRAND_NAME,
@@ -363,15 +352,12 @@ export default function InvoiceDetail() {
         <div className="h-2 w-full bg-gradient-to-r from-slate-950 via-primary-600 to-amber-500 rounded-t-2xl print:rounded-none" />
 
         <div className="min-w-0 p-4 md:p-6 print:p-2 space-y-4 print:space-y-2.5">
-          {/* Header Section: Tax Invoice on Right, Studio Brand on Left */}
+          {/* Header Section: Invoice Details on Right, Studio Brand on Left */}
           <div className="flex flex-col md:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
-            {/* 1. Document Details & Official Tax Invoice Badge (Right in RTL) */}
+            {/* 1. Document Details (Right in RTL) */}
             <div className="w-full md:min-w-[220px] rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-start shadow-sm print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">فاتورة ضريبية رسمية</p>
-                  <p className="text-[9px] font-bold text-primary-700" dir="ltr">TAX INVOICE</p>
-                </div>
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">فاتورة رسمية</p>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${getInvoiceStatusColor(
                     data.status
@@ -424,12 +410,6 @@ export default function InvoiceDetail() {
                   {data.studio.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
-                  {data.studio.vatNumber && (
-                    <span className="inline-flex items-center gap-1">
-                      <strong className="text-slate-700">VAT:</strong>
-                      <span className="font-mono">{data.studio.vatNumber}</span>
-                    </span>
-                  )}
                   {data.studio.crNumber && (
                     <span className="inline-flex items-center gap-1">
                       <strong className="text-slate-700">CR:</strong>
@@ -635,23 +615,11 @@ export default function InvoiceDetail() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-[11px] text-slate-600">
-                <span>الوعاء الضريبي:</span>
-                <span className="font-mono font-medium text-slate-800">
-                  {formatCurrency(Math.max(0, data.subtotal - data.discount))}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] text-slate-600">
-                <span>ضريبة القيمة المضافة{data.taxAmount > 0 ? ` (${data.taxRate}%)` : ' (معفاة)'}:</span>
-                <span className="font-mono font-medium text-slate-800">{formatCurrency(data.taxAmount)}</span>
-              </div>
-
               <div className="border-t border-slate-200 pt-1.5">
                 <div className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-2 text-white">
                   <div>
                     <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                      الإجمالي شامل الضريبة
+                      الإجمالي
                     </span>
                   </div>
                   <span className="font-mono text-base font-black text-white">{formatCurrency(data.total)}</span>
@@ -739,8 +707,7 @@ export default function InvoiceDetail() {
             <div className="ip-header">
               <div className="ip-meta">
                 <div className="ip-title">
-                  <span>فاتورة ضريبية رسمية</span>
-                  <span dir="ltr">TAX INVOICE</span>
+                  <span>فاتورة رسمية</span>
                 </div>
                 <div className="ip-row"><span>رقم الفاتورة</span><strong dir="ltr">{data.invoiceNumber}</strong></div>
                 <div className="ip-row"><span>تاريخ الإصدار</span><strong>{formatDate(data.date)}</strong></div>
@@ -755,7 +722,7 @@ export default function InvoiceDetail() {
                   <h1 className="ip-studio-name">{data.studio.name}</h1>
                   <span className="ip-brand-rule" />
                   <p className="ip-muted">
-                    {[data.studio.vatNumber && `VAT ${data.studio.vatNumber}`, data.studio.crNumber && `CR ${data.studio.crNumber}`].filter(Boolean).join('  ·  ')}
+                    {data.studio.crNumber ? `CR ${data.studio.crNumber}` : ''}
                   </p>
                   <p className="ip-muted">{data.studio.phone}</p>
                   <p className="ip-muted ip-brand-address">{data.studio.address}</p>
@@ -825,12 +792,7 @@ export default function InvoiceDetail() {
                 {data.discount > 0 && (
                   <div className="ip-row"><span>الخصم المطبق</span><strong>- {formatCurrency(data.discount)}</strong></div>
                 )}
-                <div className="ip-row"><span>الوعاء الضريبي</span><strong>{formatCurrency(Math.max(0, data.subtotal - data.discount))}</strong></div>
-                <div className="ip-row">
-                  <span>ضريبة القيمة المضافة{data.taxAmount > 0 ? ` (${data.taxRate}%)` : ' (معفاة)'}</span>
-                  <strong>{formatCurrency(data.taxAmount)}</strong>
-                </div>
-                <div className="ip-grand"><span>الإجمالي شامل الضريبة</span><strong>{formatCurrency(data.total)}</strong></div>
+                <div className="ip-grand"><span>الإجمالي</span><strong>{formatCurrency(data.total)}</strong></div>
                 <div className="ip-row ip-paid"><span>المبلغ المسدد</span><strong>{formatCurrency(data.paid)}</strong></div>
                 <div className="ip-row ip-remaining"><span>المبلغ المتبقي</span><strong>{formatCurrency(data.remaining)}</strong></div>
               </div>
