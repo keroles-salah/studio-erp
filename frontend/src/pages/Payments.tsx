@@ -9,8 +9,6 @@ import api from '../lib/api';
 import { formatCurrency, formatDate, getPaymentMethodLabel, todayLocalDate } from '../lib/utils';
 import { LARGE_PAGE_SIZE } from '../lib/constants';
 
-const METHODS = ['CASH', 'BANK_TRANSFER', 'CARD'];
-
 export default function Payments() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -30,6 +28,19 @@ export default function Payments() {
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Payment methods come from settings (enabled only), with a safe fallback
+  const { data: paymentMethodsData } = useQuery({
+    queryKey: ['payment-methods'],
+    queryFn: async () => {
+      const r = await api.get('/settings/payment-methods');
+      return (r.data?.data || []).filter((m: any) => m.enabled);
+    },
+  });
+  const METHODS: string[] =
+    (paymentMethodsData || []).length > 0
+      ? (paymentMethodsData as any[]).map((m: any) => m.value)
+      : ['CASH', 'BANK_TRANSFER', 'MADA', 'STC_PAY', 'APPLE_PAY', 'ONLINE_PAYMENT', 'OTHER'];
 
   // ── Fetch invoices for dropdown ──
   const { data: invoicesData } = useQuery({

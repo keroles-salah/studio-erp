@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
+  CreditCard,
   DollarSign,
   Globe,
   Palette,
+  Plus,
   Save,
   Loader2,
   Landmark,
   CheckCircle2,
+  X,
 } from 'lucide-react';
 import api from '../lib/api';
 import { SAVE_SUCCESS_DURATION_MS } from '../lib/constants';
@@ -20,6 +23,7 @@ const TABS = [
   { key: 'finance', label: 'المالية والضرائب', icon: DollarSign, desc: 'العملات، نسب الضرائب، والبادئات' },
   { key: 'language', label: 'اللغة والنظام', icon: Globe, desc: 'اللغة الافتراضية واتجاه الواجهة' },
   { key: 'appearance', label: 'المظهر', icon: Palette, desc: 'ألوان المنظومة ونمط القوائم' },
+  { key: 'paymentMethods', label: 'طرق الدفع', icon: CreditCard, desc: 'إدارة طرق الدفع المتاحة في الحجوزات والمدفوعات' },
 ] as const;
 
 const FIELD_TO_SETTING: Record<string, { key: string; category: string }> = {
@@ -114,6 +118,78 @@ export default function Settings() {
       setTimeout(() => setSaveSuccess(false), SAVE_SUCCESS_DURATION_MS);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ── Payment methods management ──
+  const [paymentMethods, setPaymentMethods] = useState<{ value: string; label: string; enabled: boolean }[]>([]);
+  const [pmLoaded, setPmLoaded] = useState(false);
+  const [pmSaving, setPmSaving] = useState(false);
+  const [pmSuccess, setPmSuccess] = useState(false);
+  const [pmError, setPmError] = useState('');
+
+  const { data: pmData } = useQuery<{ value: string; label: string; enabled: boolean }[]>({
+    queryKey: ['payment-methods'],
+    queryFn: async () => {
+      const res = await api.get('/settings/payment-methods');
+      return res.data?.data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (pmData && !pmLoaded) {
+      setPaymentMethods(pmData);
+      setPmLoaded(true);
+    }
+  }, [pmData, pmLoaded]);
+
+  const updatePm = (i: number, patch: Partial<{ value: string; label: string; enabled: boolean }>) => {
+    setPaymentMethods((prev) => prev.map((m, idx) => (idx === i ? { ...m, ...patch } : m)));
+    setPmError('');
+  };
+
+  const addPm = () => {
+    setPaymentMethods((prev) => [...prev, { value: '', label: '', enabled: true }]);
+    setPmError('');
+  };
+
+  const removePm = (i: number) => {
+    setPaymentMethods((prev) => prev.filter((_, idx) => idx !== i));
+    setPmError('');
+  };
+
+  const savePaymentMethods = async () => {
+    const cleaned = paymentMethods
+      .map((m) => ({ value: m.value.trim().toUpperCase(), label: m.label.trim(), enabled: m.enabled }))
+      .filter((m) => m.value && m.label);
+
+    if (cleaned.length === 0) {
+      setPmError('أضف طريقة دفع واحدة على الأقل (اسم وكود)');
+      return;
+    }
+    const seen = new Set<string>();
+    for (const m of cleaned) {
+      if (seen.has(m.value)) {
+        setPmError(`كود مكرر: ${m.value} — كل طريقة يجب أن يكون لها كود فريد`);
+        return;
+      }
+      seen.add(m.value);
+    }
+
+    setPmSaving(true);
+    setPmSuccess(false);
+    setPmError('');
+    try {
+      await api.put('/settings/payment-methods', { methods: cleaned });
+      await queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
+      setPmLoaded(false);
+      setPaymentMethods(cleaned);
+      setPmSuccess(true);
+      setTimeout(() => setPmSuccess(false), SAVE_SUCCESS_DURATION_MS);
+    } catch (err: any) {
+      setPmError(err?.response?.data?.error?.message || err?.message || 'حدث خطأ أثناء حفظ طرق الدفع');
+    } finally {
+      setPmSaving(false);
     }
   };
 
@@ -507,7 +583,84 @@ export default function Settings() {
               </div>
             )}
 
+            {/* 6. PAYMENT METHODS TAB */}
+            {activeTab === 'paymentMethods' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-primary-600" />
+                    طرق الدفع المتاحة
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    الطرق المفعّلة تظهر في نماذج إنشاء الحجز وتسجيل المدفوعات. أضف طرقاً جديدة (مدى، STC Pay، تمارا...) أو عدّل وعطّل الموجودة.
+                  </p>
+                </div>
+
+                {pmError && (
+                  <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">{pmError}</div>
+                )}
+                {pmSuccess && (
+                  <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm">
+                    تم حفظ طرق الدفع بنجاح وستظهر مباشرة في النماذج
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {paymentMethods.map((m, i) => (
+                    <div key={i} className="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                      <input
+                        value={m.label}
+                        onChange={(e) => updatePm(i, { label: e.target.value })}
+                        placeholder="اسم الطريقة (مثال: مدى)"
+                        className="input flex-1 min-w-[140px]"
+                      />
+                      <input
+                        value={m.value}
+                        onChange={(e) => updatePm(i, { value: e.target.value })}
+                        placeholder="الكود (مثال: MADA)"
+                        className="input flex-1 min-w-[120px] font-mono uppercase"
+                        dir="ltr"
+                      />
+                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={m.enabled}
+                          onChange={(e) => updatePm(i, { enabled: e.target.checked })}
+                          className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        مفعّلة
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removePm(i)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        title="حذف الطريقة"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <button type="button" onClick={addPm} className="btn-secondary inline-flex items-center gap-2">
+                    <Plus className="w-4 h-4" /> إضافة طريقة دفع
+                  </button>
+                  <button
+                    type="button"
+                    onClick={savePaymentMethods}
+                    disabled={pmSaving}
+                    className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 shadow-md shadow-primary-600/20"
+                  >
+                    {pmSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    <span>{pmSaving ? 'جارٍ الحفظ...' : 'حفظ طرق الدفع'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Bottom Actions Bar */}
+            {activeTab !== 'paymentMethods' && (
             <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-100">
               <p className="text-xs text-slate-400">
                 سيتم تحديث كافة الفواتير الجديدة والسابقة بالبيانات المحفوظة فورياً
@@ -522,6 +675,7 @@ export default function Settings() {
                 <span>{saving ? 'جارٍ الحفظ...' : 'حفظ التغييرات'}</span>
               </button>
             </div>
+            )}
           </form>
         </div>
       </div>

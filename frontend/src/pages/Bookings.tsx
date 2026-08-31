@@ -36,7 +36,6 @@ interface Booking {
 interface EquipmentItem { equipmentId: string; quantity: number; unitPrice: number; rentalCost: number; notes: string; }
 
 const EVENT_TYPES = ['WEDDING', 'ENGAGEMENT', 'PARTY', 'CORPORATE_EVENT', 'STUDIO_SESSION', 'OTHER'];
-const PAYMENT_METHODS = ['CASH', 'BANK_TRANSFER', 'CARD'];
 
 export default function Bookings() {
   const { t } = useTranslation();
@@ -82,6 +81,19 @@ export default function Bookings() {
   const rawTaxRate = Number(settings?.finance?.['studio.tax_rate']);
   // Default tax rate is 0
   const taxRate = taxEnabled ? (Number.isFinite(rawTaxRate) && rawTaxRate >= 0 ? rawTaxRate : 0) : 0;
+
+  // Payment methods come from settings (enabled only), with a safe fallback
+  const { data: paymentMethodsData } = useQuery({
+    queryKey: ['payment-methods'],
+    queryFn: async () => {
+      const res = await api.get('/settings/payment-methods');
+      return (res.data?.data || []).filter((m: any) => m.enabled);
+    },
+  });
+  const PAYMENT_METHODS: string[] =
+    (paymentMethodsData || []).length > 0
+      ? (paymentMethodsData as any[]).map((m: any) => m.value)
+      : ['CASH', 'BANK_TRANSFER', 'MADA', 'STC_PAY', 'APPLE_PAY', 'ONLINE_PAYMENT', 'OTHER'];
 
   const totals = useMemo(() => {
     const equipmentSubtotal = equipment.reduce((sum, e) => sum + Math.max(0, (Number(e.quantity) || 0) * (Number(e.unitPrice) || 0)), 0);

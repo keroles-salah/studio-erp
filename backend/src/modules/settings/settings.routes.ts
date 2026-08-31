@@ -9,6 +9,8 @@ router.use(authenticate);
 router.get('/', requirePermission('settings.view'), settingsController.list);
 router.get('/studio', requirePermission('settings.view'), settingsController.getStudioSettings);
 router.patch('/', requirePermission('settings.update'), settingsController.update);
+router.get('/payment-methods', requirePermission('settings.view'), settingsController.getPaymentMethods);
+router.put('/payment-methods', requirePermission('settings.update'), settingsController.savePaymentMethods);
 router.get('/:key', requirePermission('settings.view'), settingsController.getByKey);
 
 export default router;

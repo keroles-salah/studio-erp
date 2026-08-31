@@ -1185,6 +1185,12 @@ async function main() {
     { key: 'studio.currency_symbol', value: 'ر.س', category: 'finance' },
     { key: 'studio.invoice_prefix', value: 'INV', category: 'finance' },
     { key: 'studio.booking_prefix', value: 'BK', category: 'finance' },
+    {
+      key: 'studio.payment_methods',
+      value:
+        '[{"value":"CASH","label":"نقداً","enabled":true},{"value":"BANK_TRANSFER","label":"تحويل بنكي","enabled":true},{"value":"MADA","label":"مدى","enabled":true},{"value":"CARD","label":"بطاقة","enabled":true},{"value":"STC_PAY","label":"STC Pay","enabled":true},{"value":"APPLE_PAY","label":"Apple Pay","enabled":true},{"value":"ONLINE_PAYMENT","label":"دفع إلكتروني","enabled":true},{"value":"TAMARA","label":"تمارا","enabled":false},{"value":"TABBY","label":"تابي","enabled":false},{"value":"OTHER","label":"أخرى","enabled":true}]',
+      category: 'finance',
+    },
     { key: 'app.default_language', value: 'ar', category: 'app' },
     { key: 'app.default_direction', value: 'rtl', category: 'app' },
     { key: 'notifications.email_enabled', value: 'true', category: 'notifications' },
