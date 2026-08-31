@@ -72,7 +72,7 @@ export const createBookingSchema = z
     notes: z.string().optional().nullable(),
     taxRate: z.number().min(0).max(100).default(15),
     discount: z.number().min(0).default(0),
-    depositPaymentMethod: paymentMethodEnum.optional(),
+    depositPaymentMethod: z.string().max(50).optional(),
   })
   .refine(
     (data) => {

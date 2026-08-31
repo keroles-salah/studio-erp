@@ -1,5 +1,26 @@
 import { prisma } from '../../config/prisma';
 
+export const PAYMENT_METHODS_KEY = 'studio.payment_methods';
+
+export interface PaymentMethod {
+  value: string;
+  label: string;
+  enabled: boolean;
+}
+
+export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
+  { value: 'CASH', label: 'نقداً', enabled: true },
+  { value: 'BANK_TRANSFER', label: 'تحويل بنكي', enabled: true },
+  { value: 'MADA', label: 'مدى', enabled: true },
+  { value: 'CARD', label: 'بطاقة', enabled: true },
+  { value: 'STC_PAY', label: 'STC Pay', enabled: true },
+  { value: 'APPLE_PAY', label: 'Apple Pay', enabled: true },
+  { value: 'ONLINE_PAYMENT', label: 'دفع إلكتروني', enabled: true },
+  { value: 'TAMARA', label: 'تمارا', enabled: false },
+  { value: 'TABBY', label: 'تابي', enabled: false },
+  { value: 'OTHER', label: 'أخرى', enabled: true },
+];
+
 export const settingsService = {
   async getSetting(key: string) {
     const setting = await prisma.setting.findUnique({
@@ -63,5 +84,30 @@ export const settingsService = {
 
     await prisma.$transaction(operations);
     return settings;
+  },
+
+  async getPaymentMethods() {
+    const setting = await prisma.setting.findUnique({
+      where: { key: PAYMENT_METHODS_KEY },
+    });
+    if (!setting) return DEFAULT_PAYMENT_METHODS;
+    try {
+      const parsed = JSON.parse(setting.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((m: Partial<PaymentMethod>) => ({
+          value: String(m.value ?? ''),
+          label: String(m.label ?? m.value ?? ''),
+          enabled: m.enabled !== false,
+        }));
+      }
+      return DEFAULT_PAYMENT_METHODS;
+    } catch {
+      return DEFAULT_PAYMENT_METHODS;
+    }
+  },
+
+  async savePaymentMethods(methods: PaymentMethod[]) {
+    await this.setSetting(PAYMENT_METHODS_KEY, JSON.stringify(methods), 'finance');
+    return methods;
   },
 };

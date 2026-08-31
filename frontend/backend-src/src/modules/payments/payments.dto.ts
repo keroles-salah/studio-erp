@@ -17,7 +17,7 @@ export const createPaymentSchema = z.object({
   bookingId: z.string().uuid().optional().nullable(),
   customerId: z.string().uuid().optional().nullable(),
   amount: z.number().positive('Payment amount must be positive'),
-  paymentMethod: paymentMethodEnum,
+  paymentMethod: z.string().min(1, 'Payment method is required').max(50),
   paymentDate: z.coerce.date().default(() => new Date()),
   referenceNumber: z.string().max(255).optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -32,7 +32,7 @@ export const listPaymentsQuerySchema = z.object({
   invoiceId: z.string().uuid().optional(),
   bookingId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),
-  paymentMethod: paymentMethodEnum.optional(),
+  paymentMethod: z.string().max(50).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
   sortBy: z

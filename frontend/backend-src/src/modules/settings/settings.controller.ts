@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../auth/auth.middleware';
 import { settingsService } from './settings.service';
-import { updateSettingsSchema } from './settings.dto';
+import { paymentMethodsSchema, updateSettingsSchema } from './settings.dto';
 import { logAction } from '../audit/audit.service';
 import { z } from 'zod';
 
@@ -47,6 +47,38 @@ export const settingsController = {
       });
 
       res.json({ success: true, data: updated });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: err.errors[0].message },
+        });
+        return;
+      }
+      throw err;
+    }
+  },
+
+  async getPaymentMethods(_req: Request, res: Response): Promise<void> {
+    const data = await settingsService.getPaymentMethods();
+    res.json({ success: true, data });
+  },
+
+  async savePaymentMethods(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const data = paymentMethodsSchema.parse(req.body);
+      const saved = await settingsService.savePaymentMethods(data.methods);
+
+      await logAction({
+        userId: req.user!.id,
+        action: 'UPDATE',
+        entity: 'Settings',
+        entityId: 'payment-methods',
+        newValue: { methods: saved } as unknown as Record<string, unknown>,
+        ipAddress: req.ip,
+      });
+
+      res.json({ success: true, data: saved });
     } catch (err) {
       if (err instanceof z.ZodError) {
         res.status(400).json({
