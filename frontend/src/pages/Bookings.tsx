@@ -57,7 +57,7 @@ export default function Bookings() {
   const [eventType, setEventType] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [venueName, setVenueName] = useState('');
-  const [depositPercent, setDepositPercent] = useState('50');
+  const [depositRequired, setDepositRequired] = useState('0');
   const [depositPaid, setDepositPaid] = useState('0');
   const [depositPaidTouched, setDepositPaidTouched] = useState(false);
   const [discount, setDiscount] = useState('0');
@@ -92,8 +92,6 @@ export default function Bookings() {
     const r2 = (n: number) => Math.round(n * 100) / 100;
     return { subtotal: r2(subtotal), discount: r2(effectiveDiscount), tax: 0, total: r2(total) };
   }, [equipment, discount]);
-
-  const depositRequired = Math.round(totals.total * (Number(depositPercent) || 0) / 100);
 
   useEffect(() => {
     if (!depositPaidTouched) {
@@ -200,7 +198,7 @@ export default function Bookings() {
         },
         services: [],
         equipment: equipment.filter(e => e.equipmentId),
-        depositRequired: depositRequired,
+        depositRequired: Number(depositRequired) || 0,
         depositPaid: Number(depositPaid) || 0,
         discount: Number(discount) || 0,
         notes: notes.trim() || null,
@@ -247,13 +245,13 @@ export default function Bookings() {
   const bookings = data?.data || [];
   const totalPages = data?.totalPages || 1;
 
-  function resetForm() { setCustomerId(''); setEventType(''); setEventDate(''); setVenueName(''); setDepositPercent('50'); setDepositPaid('0'); setDepositPaidTouched(false); setDiscount('0'); setPaymentMethod(''); setNotes(''); setEquipment([]); }
+  function resetForm() { setCustomerId(''); setEventType(''); setEventDate(''); setVenueName(''); setDepositRequired('0'); setDepositPaid('0'); setDepositPaidTouched(false); setDiscount('0'); setPaymentMethod(''); setNotes(''); setEquipment([]); }
   function openModal() { resetForm(); setFormError(''); setShowModal(true); }
   function handleSubmit() {
     if (!customerId) { setFormError('يجب اختيار العميل'); return; }
     if (!eventType) { setFormError('يجب اختيار نوع الفعالية'); return; }
     if (!eventDate) { setFormError('يجب تحديد تاريخ الفعالية'); return; }
-    if (Number(depositPaid) > depositRequired) { setFormError('المدفوع لا يمكن أن يتجاوز العربون المطلوب'); return; }
+    if (Number(depositPaid) > (Number(depositRequired) || 0)) { setFormError('المدفوع لا يمكن أن يتجاوز العربون المطلوب'); return; }
     setIsSubmitting(true);
     createMutation.mutate(undefined, { onSettled: () => setIsSubmitting(false) });
   }
@@ -381,10 +379,8 @@ export default function Bookings() {
                     {PAYMENT_METHODS.map(pm => <option key={pm} value={pm}>{getPaymentMethodLabel(pm)}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.depositPercent')}</label>
-                  <input type="number" value={depositPercent} onChange={e => setDepositPercent(e.target.value)} className="input" min="0" max="100" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.depositRequired')}</label>
-                  <input type="number" value={depositRequired} readOnly className="input bg-slate-50" /></div>
+                  <input type="number" value={depositRequired} onChange={e => setDepositRequired(e.target.value)} className="input font-mono font-bold" min="0" placeholder="0.00" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.depositPaid')}</label>
                   <input type="number" value={depositPaid} onChange={e => { setDepositPaid(e.target.value); setDepositPaidTouched(true); }} className="input" min="0" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.discount')}</label>
@@ -443,7 +439,7 @@ export default function Bookings() {
                         )}
                       </div>
                       <div className="w-20"><input type="number" value={1} readOnly className="input text-sm bg-slate-100 text-slate-500" title="Quantity is fixed at 1 (each equipment is a single unit)" /></div>
-                      <div className="w-28"><input type="number" value={eq.unitPrice} onChange={e => { const ne=[...equipment]; ne[i].unitPrice=Number(e.target.value); setEquipment(ne); }} className="input text-sm" min="0" /></div>
+                      <div className="w-28"><input type="number" value={eq.unitPrice} readOnly className="input text-sm bg-slate-100 text-slate-500" title="سعر المعدة ثابت من كتالوج المعدات" /></div>
                       <button type="button" onClick={() => setEquipment(equipment.filter((_,idx) => idx!==i))} className="text-red-500 hover:text-red-700 p-1"><MinusCircle className="w-4 h-4" /></button>
                     </div>
                   );
