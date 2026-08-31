@@ -222,6 +222,11 @@ export class InvoicesService {
               select: {
                 eventType: true,
                 eventDate: true,
+                startTime: true,
+                endTime: true,
+                venueName: true,
+                venueAddress: true,
+                city: true,
               },
             },
           },

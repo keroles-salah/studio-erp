@@ -18,6 +18,8 @@ import {
   QrCode,
   ShieldCheck,
   FileCheck,
+  CalendarDays,
+  Clock,
 } from 'lucide-react';
 import api from '../lib/api';
 import {
@@ -26,6 +28,7 @@ import {
   getInvoiceStatusColor,
   getInvoiceStatusLabel,
   getPaymentMethodLabel,
+  getEventTypeLabel,
 } from '../lib/utils';
 import {
   TOAST_DURATION_MS,
@@ -55,6 +58,16 @@ export interface InvoiceData {
   remaining: number;
   notes: string | null;
   bookingId?: string | null;
+  booking?: {
+    number: string;
+    eventType: string;
+    eventDate: string;
+    startTime?: string | null;
+    endTime?: string | null;
+    venueName?: string | null;
+    venueAddress?: string | null;
+    city?: string | null;
+  } | null;
   customer: {
     id: string;
     name: string;
@@ -110,6 +123,18 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
     remaining: Number(raw.remainingAmount ?? 0),
     notes: raw.notes ?? settings?.['studio.invoice_notes'] ?? null,
     bookingId: raw.bookingId ?? null,
+    booking: raw.booking
+      ? {
+          number: raw.booking.bookingNumber,
+          eventType: raw.booking.event?.eventType ?? 'OTHER',
+          eventDate: raw.booking.event?.eventDate,
+          startTime: raw.booking.event?.startTime ?? null,
+          endTime: raw.booking.event?.endTime ?? null,
+          venueName: raw.booking.event?.venueName ?? null,
+          venueAddress: raw.booking.event?.venueAddress ?? null,
+          city: raw.booking.event?.city ?? null,
+        }
+      : null,
     customer: {
       id: raw.customer?.id ?? '',
       name: raw.customer?.fullName ?? 'عميل مميز',
@@ -383,12 +408,6 @@ export default function InvoiceDetail() {
                     <span className="font-medium text-slate-800">{formatDate(data.dueDate)}</span>
                   </div>
                 )}
-                {data.bookingId && (
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">الحجز المرتبط:</span>
-                    <span className="font-mono font-medium text-primary-700" dir="ltr">#{data.bookingId.slice(0, 8)}</span>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -431,8 +450,8 @@ export default function InvoiceDetail() {
             </div>
           </div>
 
-          {/* Customer & Billing Parties Section */}
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
+          {/* Customer, booking & billing details */}
+          <div className={`grid gap-3 grid-cols-1 ${data.booking ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             {/* Customer Box */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200/80 pb-1">
@@ -463,6 +482,22 @@ export default function InvoiceDetail() {
                 </div>
               </div>
             </div>
+
+            {data.booking && (
+              <div className="rounded-xl border border-primary-200 bg-primary-50/40 p-3 print:bg-white print:border-slate-300 print:p-2">
+                <div className="flex items-center gap-1.5 mb-1.5 border-b border-primary-100 pb-1">
+                  <CalendarDays className="h-3.5 w-3.5 text-primary-600" />
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-700">تفاصيل الحجز / Booking Details</h3>
+                </div>
+                <div className="space-y-1 text-[11px] text-slate-600">
+                  <p className="flex items-center justify-between gap-2"><span>رقم الحجز:</span><strong className="font-mono text-primary-700" dir="ltr">{data.booking.number}</strong></p>
+                  <p className="flex items-center justify-between gap-2"><span>نوع الفعالية:</span><strong className="text-slate-800">{getEventTypeLabel(data.booking.eventType)}</strong></p>
+                  {data.booking.eventDate && <p className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" />التاريخ:</span><strong className="text-slate-800">{formatDate(data.booking.eventDate)}</strong></p>}
+                  {(data.booking.startTime || data.booking.endTime) && <p className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />الوقت:</span><strong className="text-slate-800" dir="ltr">{data.booking.startTime ? new Date(data.booking.startTime).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}{data.booking.endTime ? ` - ${new Date(data.booking.endTime).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}` : ''}</strong></p>}
+                  {(data.booking.venueName || data.booking.city) && <p className="flex items-start justify-between gap-2"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />المكان:</span><strong className="max-w-[65%] text-end text-slate-800">{[data.booking.venueName, data.booking.city].filter(Boolean).join(' — ')}</strong></p>}
+                </div>
+              </div>
+            )}
 
             {/* Studio Payment & Bank Details */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:bg-white print:border-slate-300 print:p-2">
@@ -595,7 +630,7 @@ export default function InvoiceDetail() {
                     فاتورة إلكترونية معتمدة
                   </p>
                   <p className="leading-tight text-slate-500">
-                    تم إنشاء وتوثيق هذه الفاتورة إلكترونياً وتخضع للوائح والأنظمة الضريبية المعمول بها.
+                    تم إنشاء وتوثيق هذه الفاتورة إلكترونياً.
                   </p>
                 </div>
               </div>
@@ -723,6 +758,15 @@ export default function InvoiceDetail() {
                 {data.customer.email && <p dir="ltr">{data.customer.email}</p>}
                 {data.customer.address && <p>{data.customer.address}</p>}
               </div>
+              {data.booking && (
+                <div className="ip-party">
+                  <h3>تفاصيل الحجز · Booking Details</h3>
+                  <div className="ip-row"><span>رقم الحجز</span><strong dir="ltr">{data.booking.number}</strong></div>
+                  <div className="ip-row"><span>نوع الفعالية</span><strong>{getEventTypeLabel(data.booking.eventType)}</strong></div>
+                  {data.booking.eventDate && <div className="ip-row"><span>التاريخ</span><strong>{formatDate(data.booking.eventDate)}</strong></div>}
+                  {(data.booking.venueName || data.booking.city) && <div className="ip-row"><span>المكان</span><strong>{[data.booking.venueName, data.booking.city].filter(Boolean).join(' — ')}</strong></div>}
+                </div>
+              )}
               <div className="ip-party">
                 <h3>بيانات التحويل · Bank Details</h3>
                 <div className="ip-row"><span>البنك</span><strong>{data.studio.bankName}</strong></div>
