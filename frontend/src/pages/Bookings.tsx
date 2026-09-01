@@ -431,8 +431,7 @@ export default function Bookings() {
                 })}
               </div>
               <div className="bg-slate-50 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between"><span className="text-slate-500">{t('booking.subtotal')}</span><span className="font-medium text-slate-700">{formatCurrency(totals.subtotal)}</span></div>
-                <div className="flex items-center justify-between border-t border-slate-200 pt-2"><span className="font-semibold text-slate-900">{t('booking.total')}</span><span className="text-lg font-bold text-primary-700">{formatCurrency(totals.total)}</span></div>
+                <div className="flex items-center justify-between"><span className="font-semibold text-slate-900">{t('booking.total')}</span><span className="text-lg font-bold text-primary-700">{formatCurrency(totals.total)}</span></div>
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-100">
