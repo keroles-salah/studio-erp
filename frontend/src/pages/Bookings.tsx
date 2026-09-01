@@ -57,9 +57,7 @@ export default function Bookings() {
   const [eventType, setEventType] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [venueName, setVenueName] = useState('');
-  const [depositRequired, setDepositRequired] = useState('0');
   const [depositPaid, setDepositPaid] = useState('0');
-  const [depositPaidTouched, setDepositPaidTouched] = useState(false);
   const [discount, setDiscount] = useState('0');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
@@ -92,12 +90,6 @@ export default function Bookings() {
     const r2 = (n: number) => Math.round(n * 100) / 100;
     return { subtotal: r2(subtotal), discount: r2(effectiveDiscount), tax: 0, total: r2(total) };
   }, [equipment, discount]);
-
-  useEffect(() => {
-    if (!depositPaidTouched) {
-      setDepositPaid(String(depositRequired));
-    }
-  }, [depositRequired, depositPaidTouched]);
 
   // Check if a piece of equipment is booked on a specific calendar date (YYYY-MM-DD)
   const getGearDateStatus = (gear: any, targetDate: string) => {
@@ -198,7 +190,7 @@ export default function Bookings() {
         },
         services: [],
         equipment: equipment.filter(e => e.equipmentId),
-        depositRequired: Number(depositRequired) || 0,
+        depositRequired: totals.total,
         depositPaid: Number(depositPaid) || 0,
         discount: Number(discount) || 0,
         notes: notes.trim() || null,
@@ -245,13 +237,13 @@ export default function Bookings() {
   const bookings = data?.data || [];
   const totalPages = data?.totalPages || 1;
 
-  function resetForm() { setCustomerId(''); setEventType(''); setEventDate(''); setVenueName(''); setDepositRequired('0'); setDepositPaid('0'); setDepositPaidTouched(false); setDiscount('0'); setPaymentMethod(''); setNotes(''); setEquipment([]); }
+  function resetForm() { setCustomerId(''); setEventType(''); setEventDate(''); setVenueName(''); setDepositPaid('0'); setDiscount('0'); setPaymentMethod(''); setNotes(''); setEquipment([]); }
   function openModal() { resetForm(); setFormError(''); setShowModal(true); }
   function handleSubmit() {
     if (!customerId) { setFormError('يجب اختيار العميل'); return; }
     if (!eventType) { setFormError('يجب اختيار نوع الفعالية'); return; }
     if (!eventDate) { setFormError('يجب تحديد تاريخ الفعالية'); return; }
-    if (Number(depositPaid) > (Number(depositRequired) || 0)) { setFormError('المدفوع لا يمكن أن يتجاوز العربون المطلوب'); return; }
+    if (Number(depositPaid) > totals.total) { setFormError('العربون المدفوع لا يمكن أن يتجاوز الإجمالي'); return; }
     setIsSubmitting(true);
     createMutation.mutate(undefined, { onSettled: () => setIsSubmitting(false) });
   }
@@ -379,10 +371,8 @@ export default function Bookings() {
                     {PAYMENT_METHODS.map(pm => <option key={pm} value={pm}>{getPaymentMethodLabel(pm)}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.depositRequired')}</label>
-                  <input type="number" value={depositRequired} onChange={e => setDepositRequired(e.target.value)} className="input font-mono font-bold" min="0" placeholder="0.00" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.depositPaid')}</label>
-                  <input type="number" value={depositPaid} onChange={e => { setDepositPaid(e.target.value); setDepositPaidTouched(true); }} className="input" min="0" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1">العربون (المدفوع) — يكتبه الموظف</label>
+                  <input type="number" value={depositPaid} onChange={e => setDepositPaid(e.target.value)} className="input font-mono font-bold" min="0" placeholder="0.00" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.discount')}</label>
                   <input type="number" value={discount} onChange={e => setDiscount(e.target.value)} className="input" min="0" /></div>
               </div>
