@@ -59,7 +59,6 @@ export default function Bookings() {
   const [eventDate, setEventDate] = useState('');
   const [venueName, setVenueName] = useState('');
   const [depositPaid, setDepositPaid] = useState('0');
-  const [discount, setDiscount] = useState('0');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
@@ -83,14 +82,10 @@ export default function Bookings() {
       : ['CASH', 'BANK_TRANSFER', 'MADA', 'STC_PAY', 'APPLE_PAY', 'ONLINE_PAYMENT', 'OTHER'];
 
   const totals = useMemo(() => {
-    const equipmentSubtotal = equipment.reduce((sum, e) => sum + Math.max(0, (Number(e.quantity) || 0) * (Number(e.unitPrice) || 0)), 0);
-    const subtotal = equipmentSubtotal;
-    const discountVal = Number(discount) || 0;
-    const effectiveDiscount = Math.min(discountVal, subtotal);
-    const total = subtotal - effectiveDiscount;
+    const subtotal = equipment.reduce((sum, e) => sum + Math.max(0, (Number(e.quantity) || 0) * (Number(e.unitPrice) || 0)), 0);
     const r2 = (n: number) => Math.round(n * 100) / 100;
-    return { subtotal: r2(subtotal), discount: r2(effectiveDiscount), tax: 0, total: r2(total) };
-  }, [equipment, discount]);
+    return { subtotal: r2(subtotal), discount: 0, tax: 0, total: r2(subtotal) };
+  }, [equipment]);
 
   // Check if a piece of equipment is booked on a specific calendar date (YYYY-MM-DD)
   const getGearDateStatus = (gear: any, targetDate: string) => {
@@ -193,7 +188,7 @@ export default function Bookings() {
         equipment: equipment.filter(e => e.equipmentId),
         depositRequired: totals.total,
         depositPaid: Number(depositPaid) || 0,
-        discount: Number(discount) || 0,
+        discount: 0,
         notes: notes.trim() || null,
         ...(paymentMethod ? { depositPaymentMethod: paymentMethod } : {}),
       });
@@ -238,7 +233,7 @@ export default function Bookings() {
   const bookings = data?.data || [];
   const totalPages = data?.totalPages || 1;
 
-  function resetForm() { setCustomerId(''); setEventType(''); setEventDate(''); setVenueName(''); setDepositPaid('0'); setDiscount('0'); setPaymentMethod(''); setNotes(''); setEquipment([]); }
+  function resetForm() { setCustomerId(''); setEventType(''); setEventDate(''); setVenueName(''); setDepositPaid('0'); setPaymentMethod(''); setNotes(''); setEquipment([]); }
   function openModal() { resetForm(); setFormError(''); setShowModal(true); }
   function handleSubmit() {
     if (!customerId) { setFormError('يجب اختيار العميل'); return; }
@@ -373,10 +368,8 @@ export default function Bookings() {
                     {PAYMENT_METHODS.map(pm => <option key={pm} value={pm}>{getPaymentMethodLabel(pm)}</option>)}
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1">العربون (المدفوع) — يكتبه الموظف</label>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1">العربون (المدفوع)</label>
                   <input type="number" value={depositPaid} onChange={e => setDepositPaid(e.target.value)} className="input font-mono font-bold" min="0" placeholder="0.00" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.discount')}</label>
-                  <input type="number" value={discount} onChange={e => setDiscount(e.target.value)} className="input" min="0" /></div>
               </div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.notes')}</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} className="input" rows={2} placeholder="ملاحظات إضافية على الحجز..." /></div>
@@ -439,7 +432,6 @@ export default function Bookings() {
               </div>
               <div className="bg-slate-50 rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between"><span className="text-slate-500">{t('booking.subtotal')}</span><span className="font-medium text-slate-700">{formatCurrency(totals.subtotal)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-slate-500">{t('booking.discount')}</span><span className="font-medium text-red-600">-{formatCurrency(totals.discount)}</span></div>
                 <div className="flex items-center justify-between border-t border-slate-200 pt-2"><span className="font-semibold text-slate-900">{t('booking.total')}</span><span className="text-lg font-bold text-primary-700">{formatCurrency(totals.total)}</span></div>
               </div>
             </div>
