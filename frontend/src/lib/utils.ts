@@ -341,3 +341,111 @@ export function getEquipmentStatusLabel(status: string, lang: 'ar' | 'en' = 'ar'
   };
   return labels[status]?.[lang] ?? status;
 }
+
+/* ----------------------------------------------------------------------------
+ * Arabic amount-to-words (invoice "amount in words")
+ * ------------------------------------------------------------------------- */
+
+const AR_ONES = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+const AR_TEENS = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+const AR_TENS = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+const AR_HUNDREDS = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+
+function threeDigitsToArabic(n: number): string {
+  if (n <= 0) return '';
+  const h = Math.floor(n / 100);
+  const rest = n % 100;
+  let parts: string[] = [];
+  if (h > 0) parts.push(AR_HUNDREDS[h]);
+  if (rest > 0) {
+    let rem = '';
+    if (rest < 10) rem = AR_ONES[rest];
+    else if (rest < 20) rem = AR_TEENS[rest - 10];
+    else {
+      const tens = Math.floor(rest / 10);
+      const ones = rest % 10;
+      rem = ones > 0 ? `${AR_ONES[ones]} و${AR_TENS[tens]}` : AR_TENS[tens];
+    }
+    parts.push(rem);
+  }
+  return parts.join(' و');
+}
+
+const GROUP_LABELS: { plural: string; dual: string; singular: string }[] = [
+  { plural: '', dual: '', singular: '' },
+  { plural: 'آلاف', dual: 'ألفان', singular: 'ألف' },
+  { plural: 'ملايين', dual: 'مليونان', singular: 'مليون' },
+  { plural: 'مليارات', dual: 'ملياران', singular: 'مليار' },
+];
+
+/** Convert a non-negative integer to Arabic words (up to billions). */
+export function numberToArabicWords(value: number): string {
+  const num = Math.floor(Math.abs(value));
+  if (num === 0) return 'صفر';
+
+  const groups: number[] = [];
+  let n = num;
+  while (n > 0) {
+    groups.push(n % 1000);
+    n = Math.floor(n / 1000);
+  }
+
+  const parts: string[] = [];
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const g = groups[i];
+    if (g === 0) continue;
+    const gWords = threeDigitsToArabic(g);
+    if (i === 0) {
+      parts.push(gWords);
+    } else {
+      const label =
+        g === 1
+          ? GROUP_LABELS[i].singular
+          : g === 2
+            ? GROUP_LABELS[i].dual
+            : g >= 3 && g <= 10
+              ? `${gWords} ${GROUP_LABELS[i].plural}`
+              : `${gWords} ${GROUP_LABELS[i].singular}`;
+      parts.push(label);
+    }
+  }
+  return parts.join(' و');
+}
+
+const CURRENCY_ARABIC: Record<string, string> = {
+  SAR: 'ريال سعودي',
+  EGP: 'جنيه مصري',
+  AED: 'درهم إماراتي',
+  KWD: 'دينار كويتي',
+  QAR: 'ريال قطري',
+  BHD: 'دينار بحريني',
+  OMR: 'ريال عماني',
+  USD: 'دولار أمريكي',
+  EUR: 'يورو',
+};
+
+const CURRENCY_FRACTION: Record<string, string> = {
+  SAR: 'هللة',
+  EGP: 'قرش',
+  KWD: 'فلس',
+  BHD: 'فلس',
+  QAR: 'درهم',
+  BHD2: 'فلس',
+  USD: 'سنت',
+  EUR: 'سنت',
+};
+
+/** Convert a monetary amount to Arabic words, e.g. "ألفان وخمسمائة ريال سعودي فقط لا غير". */
+export function amountToArabicWords(amount: number, currency: string = 'SAR'): string {
+  const abs = Math.abs(Number(amount) || 0);
+  const major = Math.floor(abs);
+  const minor = Math.round((abs - major) * 100);
+  const currencyLabel = CURRENCY_ARABIC[currency] ?? currency;
+
+  let result = `${numberToArabicWords(major)} ${currencyLabel}`;
+  if (minor > 0) {
+    const fractionLabel = CURRENCY_FRACTION[currency] ?? 'جزء من مائة';
+    result += ` و${numberToArabicWords(minor)} ${fractionLabel}`;
+  }
+  return `${result} فقط لا غير`;
+}

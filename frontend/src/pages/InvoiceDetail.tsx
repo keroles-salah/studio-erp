@@ -15,12 +15,14 @@ import {
   User,
   Copy,
   Check,
-  QrCode,
   ShieldCheck,
   FileCheck,
   CalendarDays,
   Clock,
+  Download,
+  MessageCircle,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../lib/api';
 import {
   formatCurrency,
@@ -29,6 +31,7 @@ import {
   getInvoiceStatusLabel,
   getPaymentMethodLabel,
   getEventTypeLabel,
+  amountToArabicWords,
 } from '../lib/utils';
 import {
   TOAST_DURATION_MS,
@@ -84,6 +87,7 @@ export interface InvoiceData {
     address: string;
     website: string;
     crNumber: string;
+    currency: string;
     bankName: string;
     accountName: string;
     iban: string;
@@ -151,6 +155,7 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
       address: settings?.['studio.address'] || BRAND_LOCATION,
       website: settings?.['studio.website'] || BRAND_WEBSITE,
       crNumber: settings?.['studio.cr_number'] || BRAND_CR_NUMBER,
+      currency: settings?.['studio.currency'] || 'SAR',
       bankName: settings?.['studio.bank_name'] || BRAND_BANK_NAME,
       accountName: settings?.['studio.account_name'] || settings?.['studio.name'] || BRAND_NAME,
       iban: settings?.['studio.iban'] || BRAND_IBAN,
@@ -209,6 +214,42 @@ export default function InvoiceDetail() {
   };
 
   const handlePrint = () => window.print();
+
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const handleDownloadPdf = async () => {
+    const el = document.getElementById('invoice-print-doc') as HTMLElement | null;
+    if (!el || pdfBusy || !data) return;
+    setPdfBusy(true);
+    const prevClass = el.className;
+    const prevPosition = el.style.position;
+    const prevLeft = el.style.left;
+    try {
+      // Temporarily make the print document visible off-screen for capture
+      el.className = prevClass.replace(/\bhidden\b/g, '').trim();
+      el.style.position = 'fixed';
+      el.style.left = '-10000px';
+      el.style.top = '0';
+      const html2pdf = (await import('html2pdf.js')).default;
+      await html2pdf()
+        .set({
+          margin: 8,
+          filename: `${data.invoiceNumber || 'invoice'}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(el)
+        .save();
+    } catch {
+      /* PDF export failure is non-critical */
+    } finally {
+      el.className = prevClass;
+      el.style.position = prevPosition;
+      el.style.left = prevLeft;
+      el.style.top = '';
+      setPdfBusy(false);
+    }
+  };
 
   const handleCopyInvoiceNumber = () => {
     if (!data?.invoiceNumber) return;
@@ -373,8 +414,19 @@ export default function InvoiceDetail() {
         id="invoice-print"
         className="invoice-print-document print:hidden mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
       >
-        {/* Luxury Top Header Border */}
-        <div className="h-2 w-full bg-gradient-to-r from-slate-950 via-primary-600 to-amber-500 rounded-t-2xl print:rounded-none" />
+        {/* Status-colored top header border */}
+        <div
+          className={`h-2 w-full rounded-t-2xl print:rounded-none bg-gradient-to-r ${
+            {
+              PAID: 'from-emerald-400 via-emerald-600 to-teal-700',
+              PARTIALLY_PAID: 'from-amber-300 via-amber-500 to-orange-600',
+              UNPAID: 'from-red-400 via-red-600 to-rose-700',
+              OVERDUE: 'from-rose-500 via-red-600 to-red-800',
+              DRAFT: 'from-slate-300 via-slate-500 to-slate-600',
+              CANCELLED: 'from-slate-300 via-slate-400 to-slate-500',
+            }[data.status] || 'from-slate-950 via-primary-600 to-amber-500'
+          }`}
+        />
 
         <div className="min-w-0 p-4 md:p-6 print:p-2 space-y-4 print:space-y-2.5">
           {/* Header Section: Invoice Details on Right, Studio Brand on Left */}
@@ -405,9 +457,29 @@ export default function InvoiceDetail() {
                 {data.dueDate && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500">تاريخ الاستحقاق:</span>
-                    <span className="font-medium text-slate-800">{formatDate(data.dueDate)}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-medium text-slate-800">{formatDate(data.dueDate)}</span>
+                      {(() => {
+                        const days = Math.ceil((new Date(data.dueDate).getTime() - Date.now()) / 86400000);
+                        if (days < 0) return <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-700">متأخرة {Math.abs(days)} يوم</span>;
+                        if (days === 0) return <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">مستحقة اليوم</span>;
+                        return <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">متبقي {days} يوم</span>;
+                      })()}
+                    </span>
                   </div>
                 )}
+                <div className="mt-1 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-1.5">
+                  <span className="font-bold text-slate-700">الإجمالي:</span>
+                  <span className="font-mono text-sm font-black text-primary-700">{formatCurrency(data.total)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-bold text-emerald-700">المسدد:</span>
+                  <span className="font-mono font-bold text-emerald-700">{formatCurrency(data.paid)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-bold text-red-600">المتبقي:</span>
+                  <span className={`font-mono font-bold ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatCurrency(data.remaining)}</span>
+                </div>
               </div>
             </div>
 
@@ -445,6 +517,17 @@ export default function InvoiceDetail() {
                     <Phone className="h-2.5 w-2.5 text-slate-400" />
                     <span className="break-all">{data.studio.phone}</span>
                   </span>
+                  {data.studio.whatsapp && data.studio.whatsapp !== data.studio.phone && (
+                    <a
+                      href={`https://wa.me/${String(data.studio.whatsapp).replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-emerald-600 hover:underline"
+                    >
+                      <MessageCircle className="h-2.5 w-2.5" />
+                      واتساب
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -619,19 +702,38 @@ export default function InvoiceDetail() {
                 </div>
               )}
 
-              {/* Electronic Verification Badge / QR Representation */}
+              {/* Electronic Verification Badge: real scannable QR + verify code */}
               <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-2.5 bg-white print:border-slate-300">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-slate-900 text-white p-1">
-                  <QrCode className="h-9 w-9" />
+                <div className="invoice-qr-box shrink-0 rounded-lg border border-slate-200 bg-white p-1.5">
+                  <QRCodeSVG
+                    value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
+                    size={62}
+                    bgColor="#ffffff"
+                    fgColor="#0f172a"
+                    level="M"
+                  />
                 </div>
-                <div className="space-y-0.5 text-[10px] text-slate-500">
+                <div className="min-w-0 space-y-0.5 text-[10px] text-slate-500">
                   <p className="font-bold text-slate-800 flex items-center gap-1 text-[11px]">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                     فاتورة إلكترونية معتمدة
                   </p>
                   <p className="leading-tight text-slate-500">
-                    تم إنشاء وتوثيق هذه الفاتورة إلكترونياً.
+                    امسح الرمز للتحقق من بيانات الفاتورة إلكترونياً.
                   </p>
+                  <span className="invoice-verify-chip" dir="ltr">
+                    ✓ {data.invoiceNumber}
+                  </span>
+                  <div className="invoice-actions pt-1">
+                    <button type="button" onClick={handleDownloadPdf} disabled={pdfBusy} className="btn-download">
+                      <Download className="h-3.5 w-3.5" />
+                      {pdfBusy ? 'جارٍ التحميل...' : 'تحميل PDF'}
+                    </button>
+                    <button type="button" onClick={handlePrint} className="btn-print">
+                      <Printer className="h-3.5 w-3.5" />
+                      طباعة
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -659,6 +761,11 @@ export default function InvoiceDetail() {
                   </div>
                   <span className="font-mono text-base font-black text-white">{formatCurrency(data.total)}</span>
                 </div>
+              </div>
+
+              <div className="invoice-amount-words">
+                <span className="text-slate-400 font-bold">المبلغ كتابةً:</span>{' '}
+                {amountToArabicWords(data.total, data.studio.currency)}
               </div>
 
               {/* Visual Payment Progress Bar */}
@@ -698,16 +805,19 @@ export default function InvoiceDetail() {
             </div>
           </div>
 
-          {/* Notes Section if any */}
+          {/* Terms & Notes Section if any */}
           {data.notes && (
             <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-2.5 text-[11px]">
-              <h4 className="font-bold text-slate-700 mb-0.5">ملاحظات:</h4>
+              <h4 className="font-bold text-slate-700 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
               <p className="text-slate-600" dir="auto">{data.notes}</p>
             </div>
           )}
 
           {/* Official Footer */}
           <div className="border-t border-slate-200 pt-3 space-y-3 print:pt-2 print:space-y-2">
+            <p className="text-center text-[12px] font-bold text-primary-700 print:text-[9px]">
+              شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم
+            </p>
             <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400 print:text-[8px]">
               <p className="min-w-0 break-words">© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
               <p className="flex min-w-0 max-w-full items-center gap-1 break-all font-mono">
@@ -723,6 +833,7 @@ export default function InvoiceDetail() {
       <div id="invoice-print-doc" className="hidden print:block">
         <div className="ip-doc" dir="rtl">
           <div className="ip-accent" />
+          <div className="ip-watermark-print">{data.studio.name}</div>
           <div className="ip-body">
             <div className="ip-header">
               <div className="ip-meta">
@@ -814,7 +925,7 @@ export default function InvoiceDetail() {
                     ))}
                   </>
                 )}
-                <div className="ip-verify">فاتورة إلكترونية معتمدة — موثقة إلكترونياً وتخضع للأنظمة الضريبية المعمول بها.</div>
+                <div className="ip-verify">فاتورة إلكترونية معتمدة — موثقة إلكترونياً · {data.invoiceNumber}</div>
               </div>
               <div className="ip-totals">
                 <div className="ip-row"><span>المجموع الفرعي</span><strong>{formatCurrency(data.subtotal)}</strong></div>
@@ -829,9 +940,16 @@ export default function InvoiceDetail() {
 
             {data.notes && (
               <div className="ip-notes">
-                <strong>ملاحظات:</strong> <span>{data.notes}</span>
+                <strong>الشروط والأحكام / ملاحظات:</strong> <span>{data.notes}</span>
               </div>
             )}
+
+            <div className="ip-amount-words">
+              <span>المبلغ كتابةً: </span>
+              {amountToArabicWords(data.total, data.studio.currency)}
+            </div>
+
+            <div className="ip-thanks">شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم</div>
 
             <div className="ip-copyright">© {new Date().getFullYear()} {data.studio.name} · جميع الحقوق محفوظة</div>
           </div>
