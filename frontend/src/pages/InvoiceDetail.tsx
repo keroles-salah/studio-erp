@@ -223,7 +223,11 @@ export default function InvoiceDetail() {
     if (!el || pdfBusy || !data) return;
 
     setPdfBusy(true);
+    const paymentHistory = document.getElementById('invoice-payment-history') as HTMLElement | null;
+    const previousPaymentDisplay = paymentHistory?.style.display ?? '';
     try {
+      // Keep payment history in the web view, but omit it from the client-facing PDF.
+      if (paymentHistory) paymentHistory.style.display = 'none';
       // Let the branded web font finish loading before html2canvas captures it.
       await document.fonts?.ready;
       const html2pdf = (await import('html2pdf.js')).default;
@@ -247,6 +251,7 @@ export default function InvoiceDetail() {
     } catch {
       showToast('تعذر إنشاء ملف PDF، حاول مرة أخرى');
     } finally {
+      if (paymentHistory) paymentHistory.style.display = previousPaymentDisplay;
       setPdfBusy(false);
     }
   };
@@ -674,7 +679,7 @@ export default function InvoiceDetail() {
             {/* Left side: Payments + QR Badge */}
             <div className="md:col-span-7 space-y-2.5">
               {data.payments?.length > 0 && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 print:bg-white print:border-slate-300">
+                <div id="invoice-payment-history" className="rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 print:bg-white print:border-slate-300">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-700">سجل الدفعات المسددة</h4>
