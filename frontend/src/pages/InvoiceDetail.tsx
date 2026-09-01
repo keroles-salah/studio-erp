@@ -217,36 +217,36 @@ export default function InvoiceDetail() {
 
   const [pdfBusy, setPdfBusy] = useState(false);
   const handleDownloadPdf = async () => {
-    const el = document.getElementById('invoice-print-doc') as HTMLElement | null;
+    // Capture the visible invoice document. Capturing the print-only element
+    // while it was hidden/off-screen caused blank PDFs in some browsers.
+    const el = document.getElementById('invoice-print') as HTMLElement | null;
     if (!el || pdfBusy || !data) return;
+
     setPdfBusy(true);
-    const prevClass = el.className;
-    const prevPosition = el.style.position;
-    const prevLeft = el.style.left;
     try {
-      // Temporarily make the print document visible off-screen for capture
-      el.className = prevClass.replace(/\bhidden\b/g, '').trim();
-      el.style.position = 'fixed';
-      el.style.left = '-10000px';
-      el.style.top = '0';
+      // Let the branded web font finish loading before html2canvas captures it.
+      await document.fonts?.ready;
       const html2pdf = (await import('html2pdf.js')).default;
       await html2pdf()
         .set({
-          margin: 8,
+          margin: [8, 8, 8, 8],
           filename: `${data.invoiceNumber || 'invoice'}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: -window.scrollY,
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         })
         .from(el)
         .save();
+      showToast('تم تحميل ملف PDF بنجاح');
     } catch {
-      /* PDF export failure is non-critical */
+      showToast('تعذر إنشاء ملف PDF، حاول مرة أخرى');
     } finally {
-      el.className = prevClass;
-      el.style.position = prevPosition;
-      el.style.left = prevLeft;
-      el.style.top = '';
       setPdfBusy(false);
     }
   };
