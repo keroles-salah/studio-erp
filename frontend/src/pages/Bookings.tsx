@@ -15,6 +15,7 @@ import {
   getEventTypeLabel,
   getPaymentMethodLabel,
   getEquipmentStatusLabel,
+  todayLocalDate,
 } from '../lib/utils';
 import {
   TOAST_DURATION_MS,
@@ -243,6 +244,7 @@ export default function Bookings() {
     if (!customerId) { setFormError('يجب اختيار العميل'); return; }
     if (!eventType) { setFormError('يجب اختيار نوع الفعالية'); return; }
     if (!eventDate) { setFormError('يجب تحديد تاريخ الفعالية'); return; }
+    if (eventDate < todayLocalDate()) { setFormError('تاريخ الفعالية لا يمكن أن يكون في الماضي'); return; }
     if (Number(depositPaid) > totals.total) { setFormError('العربون المدفوع لا يمكن أن يتجاوز الإجمالي'); return; }
     setIsSubmitting(true);
     createMutation.mutate(undefined, { onSettled: () => setIsSubmitting(false) });
@@ -362,7 +364,7 @@ export default function Bookings() {
                   </select>
                 </div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.eventDate')} *</label>
-                  <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="input" /></div>
+                  <input type="date" value={eventDate} min={todayLocalDate()} onChange={e => setEventDate(e.target.value)} className="input" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">مكان الفعالية / القاعة</label>
                   <input type="text" value={venueName} onChange={e => setVenueName(e.target.value)} className="input" placeholder="مثال: فندق الفورسيزونز - قاعة اللؤلؤة" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">{t('booking.paymentMethod')}</label>
