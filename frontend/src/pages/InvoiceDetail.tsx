@@ -834,71 +834,111 @@ export default function InvoiceDetail() {
         </div>
       </div>
 
-      {/* Print-only invoice document (flat, single-page, premium print layout) */}
+      {/* Print-only invoice document — "boutique sidebar" A4 layout */}
       <div id="invoice-print-doc" className="hidden print:block">
-        <div className="ip-doc" dir="rtl">
-          <div className="ip-accent" />
-          <div className="ip-watermark-print">{data.studio.name}</div>
-          <div
-            className={`ip-stamp ip-stamp-${data.status.toLowerCase()}`}
-          >
-            {isPaid && <CheckCircle2 className="ip-stamp-icon" />}
-            {getInvoiceStatusLabel(data.status)}
-          </div>
-
-          <div className="ip-body">
-            {/* Header: document meta right, brand identity left (RTL) */}
-            <div className="ip-header">
-              <div className="ip-meta">
-                <div className="ip-title">
-                  <span>فاتورة ضريبية رسمية</span>
-                  <span>TAX INVOICE</span>
-                </div>
-                <div className="ip-row"><span>رقم الفاتورة</span><strong dir="ltr">{data.invoiceNumber}</strong></div>
-                <div className="ip-row"><span>تاريخ الإصدار</span><strong>{formatDate(data.date)}</strong></div>
-                {data.dueDate && <div className="ip-row"><span>تاريخ الاستحقاق</span><strong>{formatDate(data.dueDate)}</strong></div>}
-              </div>
-
-              <div className="ip-brand" dir="ltr">
-                {data.studio.logo && (
-                  <img src={data.studio.logo} alt="Logo" className="ip-logo" />
-                )}
-                <div className="ip-brand-info">
-                  <span className="ip-brand-kicker">{BRAND_NAME} · STUDIO</span>
-                  <h1 className="ip-studio-name">{data.studio.name}</h1>
-                  <span className="ip-brand-rule" />
-                  <p className="ip-muted">
-                    {data.studio.crNumber ? `CR ${data.studio.crNumber}` : ''}
-                  </p>
-                  <p className="ip-muted">{data.studio.phone}</p>
-                  <p className="ip-muted ip-brand-address">{data.studio.address}</p>
-                </div>
+        <div className="ip-sheet" dir="rtl">
+          {/* ── Dark navy sidebar ─────────────────────────────── */}
+          <aside className="ip-side">
+            <div className="ip-side-top">
+              {data.studio.logo ? (
+                <img src={data.studio.logo} alt="Logo" className="ip-side-logo" />
+              ) : (
+                <div className="ip-side-monogram">{data.studio.name?.trim().charAt(0) || 'S'}</div>
+              )}
+              <div className="ip-side-brand">
+                <span className="ip-side-kicker" dir="ltr">{BRAND_NAME} · STUDIO</span>
+                <h1 className="ip-side-name">{data.studio.name}</h1>
               </div>
             </div>
 
-            <div className="ip-parties">
-              <div className="ip-party">
+            <div className={`ip-side-badge ip-badge-${data.status.toLowerCase()}`}>
+              {isPaid && <CheckCircle2 className="ip-badge-icon" />}
+              <span>{getInvoiceStatusLabel(data.status)}</span>
+            </div>
+
+            <div className="ip-side-block">
+              <span className="ip-side-label">فاتورة رقم · INVOICE No.</span>
+              <span className="ip-side-value" dir="ltr">{data.invoiceNumber}</span>
+            </div>
+
+            <div className="ip-side-grid">
+              <div>
+                <span className="ip-side-label">تاريخ الإصدار</span>
+                <span className="ip-side-sub">{formatDate(data.date)}</span>
+              </div>
+              {data.dueDate && (
+                <div>
+                  <span className="ip-side-label">الاستحقاق</span>
+                  <span className="ip-side-sub">{formatDate(data.dueDate)}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="ip-side-due">
+              <span className="ip-side-label">المبلغ المتبقي</span>
+              <span className="ip-side-amount">{formatCurrency(data.remaining)}</span>
+              <span className="ip-side-paidline">
+                المسدد {formatCurrency(data.paid)} من {formatCurrency(data.total)}
+              </span>
+            </div>
+
+            <div className="ip-side-qr">
+              <div className="ip-side-qr-box">
+                <QRCodeSVG
+                  value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
+                  size={52}
+                  bgColor="#ffffff"
+                  fgColor="#0d1b2f"
+                  level="M"
+                />
+              </div>
+              <p>امسح الرمز للتحقق<br />فاتورة إلكترونية معتمدة</p>
+            </div>
+
+            <div className="ip-side-foot">
+              {data.studio.crNumber && <p dir="ltr">CR {data.studio.crNumber}</p>}
+              <p dir="ltr">{data.studio.phone}</p>
+              <p>{data.studio.address}</p>
+            </div>
+          </aside>
+
+          {/* ── Main column ───────────────────────────────────── */}
+          <main className="ip-main">
+            <header className="ip-main-head">
+              <div>
+                <h2 className="ip-main-title">فاتورة ضريبية رسمية</h2>
+                <span className="ip-main-sub" dir="ltr">TAX INVOICE</span>
+              </div>
+              <span className="ip-main-ref" dir="ltr">{data.invoiceNumber}</span>
+            </header>
+
+            <section className="ip-cards">
+              <div className="ip-card">
                 <h3>فاتورة إلى · Billed To</h3>
-                <p className="ip-party-name">{data.customer.name}</p>
+                <p className="ip-card-name">{data.customer.name}</p>
                 {data.customer.phone && <p dir="ltr">{data.customer.phone}</p>}
                 {data.customer.email && <p dir="ltr">{data.customer.email}</p>}
                 {data.customer.address && <p>{data.customer.address}</p>}
               </div>
+
               {data.booking && (
-                <div className="ip-party">
-                  <h3>تفاصيل الحجز · Booking Details</h3>
-                  <div className="ip-row"><span>رقم الحجز</span><strong dir="ltr">{data.booking.number}</strong></div>
-                  <div className="ip-row"><span>نوع الفعالية</span><strong>{getEventTypeLabel(data.booking.eventType)}</strong></div>
-                  {data.booking.eventDate && <div className="ip-row"><span>التاريخ</span><strong>{formatDate(data.booking.eventDate)}</strong></div>}
-                  {(data.booking.venueName || data.booking.city) && <div className="ip-row"><span>المكان</span><strong>{[data.booking.venueName, data.booking.city].filter(Boolean).join(' — ')}</strong></div>}
+                <div className="ip-card">
+                  <h3>تفاصيل الحجز · Booking</h3>
+                  <div className="ip-line"><span>رقم الحجز</span><strong dir="ltr">{data.booking.number}</strong></div>
+                  <div className="ip-line"><span>نوع الفعالية</span><strong>{getEventTypeLabel(data.booking.eventType)}</strong></div>
+                  {data.booking.eventDate && <div className="ip-line"><span>التاريخ</span><strong>{formatDate(data.booking.eventDate)}</strong></div>}
+                  {(data.booking.venueName || data.booking.city) && (
+                    <div className="ip-line"><span>المكان</span><strong>{[data.booking.venueName, data.booking.city].filter(Boolean).join(' — ')}</strong></div>
+                  )}
                 </div>
               )}
-              <div className="ip-party">
-                <h3>بيانات التحويل · Bank Details</h3>
-                <div className="ip-row"><span>البنك</span><strong>{data.studio.bankName}</strong></div>
-                <div className="ip-row"><span>الآيبان IBAN</span><strong dir="ltr">{data.studio.iban}</strong></div>
+
+              <div className="ip-card">
+                <h3>بيانات التحويل · Bank</h3>
+                <div className="ip-line"><span>البنك</span><strong>{data.studio.bankName}</strong></div>
+                <div className="ip-line"><span>الآيبان</span><strong dir="ltr">{data.studio.iban}</strong></div>
               </div>
-            </div>
+            </section>
 
             <table className="ip-table">
               <thead>
@@ -925,48 +965,26 @@ export default function InvoiceDetail() {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={data.discount > 0 ? 5 : 4} className="ip-foot-label">المجموع الفرعي</td>
+                  <td className="ip-col-amount">{formatCurrency(data.subtotal)}</td>
+                </tr>
+                {data.discount > 0 && (
+                  <tr>
+                    <td colSpan={5} className="ip-foot-label">الخصم المطبق</td>
+                    <td className="ip-col-amount ip-foot-discount">- {formatCurrency(data.discount)}</td>
+                  </tr>
+                )}
+                <tr className="ip-foot-grand">
+                  <td colSpan={data.discount > 0 ? 5 : 4}>الإجمالي المستحق</td>
+                  <td className="ip-col-amount">{formatCurrency(data.total)}</td>
+                </tr>
+              </tfoot>
             </table>
 
-            <div className="ip-summary">
-              <div className="ip-payments">
-                {data.payments?.length > 0 && (
-                  <>
-                    <h3 className="ip-section-title">سجل الدفعات</h3>
-                    {data.payments.map((p) => (
-                      <div key={p.id} className="ip-row">
-                        <span>{getPaymentMethodLabel(p.method)} · {formatDate(p.date)}</span>
-                        <strong>{formatCurrency(p.amount)}</strong>
-                      </div>
-                    ))}
-                  </>
-                )}
-                <div className="ip-verify">
-                  <div className="ip-qr-wrap">
-                    <QRCodeSVG
-                      value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
-                      size={44}
-                      bgColor="#ffffff"
-                      fgColor="#152238"
-                      level="M"
-                    />
-                  </div>
-                  <p>فاتورة إلكترونية معتمدة — موثقة إلكترونياً<br />امسح الرمز للتحقق · {data.invoiceNumber}</p>
-                </div>
-              </div>
-              <div className="ip-totals">
-                <div className="ip-row"><span>المجموع الفرعي</span><strong>{formatCurrency(data.subtotal)}</strong></div>
-                {data.discount > 0 && (
-                  <div className="ip-row"><span>الخصم المطبق</span><strong>- {formatCurrency(data.discount)}</strong></div>
-                )}
-                <div className="ip-grand"><span>الإجمالي</span><strong>{formatCurrency(data.total)}</strong></div>
-                <div className="ip-row ip-paid"><span>المبلغ المسدد</span><strong>{formatCurrency(data.paid)}</strong></div>
-                <div className="ip-row ip-remaining"><span>المبلغ المتبقي</span><strong>{formatCurrency(data.remaining)}</strong></div>
-              </div>
-            </div>
-
-            <div className="ip-amount-words">
-              <span>المبلغ كتابةً: </span>
-              {amountToArabicWords(data.total, data.studio.currency)}
+            <div className="ip-words">
+              <span>المبلغ كتابةً:</span> {amountToArabicWords(data.total, data.studio.currency)}
             </div>
 
             {data.notes && (
@@ -975,25 +993,22 @@ export default function InvoiceDetail() {
               </div>
             )}
 
-            {/* Signature & official stamp section for handoff */}
             <div className="ip-signatures">
               <div className="ip-sign-box">
                 <span className="ip-sign-line" />
                 <p>توقيع المستلم · Customer Signature</p>
               </div>
-              <div className="ip-sign-box ip-sign-stamp">
+              <div className="ip-sign-box">
                 <span className="ip-sign-line" />
                 <p>ختم واعتماد الاستوديو · Authorized Stamp</p>
               </div>
             </div>
 
-            <div className="ip-thanks">شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم</div>
-
-            <div className="ip-copyright">
-              <span>© {new Date().getFullYear()} {data.studio.name} · جميع الحقوق محفوظة</span>
-              <span className="ip-doc-ref">Doc Ref: {data.id}</span>
-            </div>
-          </div>
+            <footer className="ip-main-foot">
+              <span>© {new Date().getFullYear()} {data.studio.name} · شكراً لثقتكم بنا</span>
+              <span className="ip-doc-ref" dir="ltr">Doc Ref: {data.id}</span>
+            </footer>
+          </main>
         </div>
       </div>
 

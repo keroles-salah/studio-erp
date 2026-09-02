@@ -695,24 +695,15 @@
   }
 }
 
-/* ─── Print: dedicated flat invoice document ──────────────── */
+/* ─── Print: boutique sidebar invoice document ────────────── */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 7mm;
+    margin: 0;
   }
 
   #invoice-print-doc {
     display: block !important;
-  }
-
-  #invoice-print-doc .ip-doc {
-    position: relative;
-    font-family: 'Cairo', 'Inter', sans-serif;
-    color: #16223b;
-    font-size: 10px;
-    line-height: 1.45;
-    background: #ffffff;
   }
 
   #invoice-print-doc * {
@@ -720,215 +711,305 @@
     print-color-adjust: exact !important;
   }
 
-  #invoice-print-doc .ip-accent {
-    height: 3mm;
-    background: linear-gradient(90deg, #152238 0%, #334155 52%, #d69a2d 80%, #f5b51b 100%);
+  /* Two-column sheet: dark navy sidebar + light main column */
+  #invoice-print-doc .ip-sheet {
+    display: flex;
+    align-items: stretch;
+    min-height: 297mm;
+    font-family: 'Tajawal', 'Cairo', 'Inter', sans-serif;
+    color: #16223b;
+    font-size: 9.5px;
+    line-height: 1.5;
+    background: #ffffff;
   }
 
-  #invoice-print-doc .ip-body {
-    padding: 4.5mm 2mm 0;
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  #invoice-print-doc .ip-side {
+    flex: 0 0 58mm;
+    width: 58mm;
+    display: flex;
+    flex-direction: column;
+    gap: 5mm;
+    padding: 12mm 6mm 10mm;
+    background: linear-gradient(180deg, #0d1b2f 0%, #142a47 62%, #0d1b2f 100%);
+    color: #e8eef7;
   }
 
-  /* Corner status stamp: reads instantly on a printed page. */
-  #invoice-print-doc .ip-stamp {
-    position: absolute;
-    top: 8mm;
-    inset-inline-end: 2mm;
-    z-index: 2;
+  #invoice-print-doc .ip-side-top {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5mm;
+  }
+
+  #invoice-print-doc .ip-side-logo {
+    width: 17mm;
+    height: 17mm;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 1.5mm;
+    padding: 1mm;
+  }
+
+  #invoice-print-doc .ip-side-monogram {
+    width: 15mm;
+    height: 15mm;
     display: flex;
     align-items: center;
-    gap: 1.2mm;
-    padding: 1.6mm 4mm;
-    border-radius: 1mm;
-    font-size: 9px;
+    justify-content: center;
+    border-radius: 50%;
+    border: 0.5mm solid #d8a13a;
+    color: #f0be5c;
+    font-size: 16px;
     font-weight: 800;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    transform: rotate(3deg);
-    box-shadow: 0 0.5mm 1.5mm rgba(15, 23, 42, 0.12);
   }
 
-  #invoice-print-doc .ip-stamp-icon {
+  #invoice-print-doc .ip-side-kicker {
+    display: block;
+    font-size: 6.8px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #d8a13a;
+  }
+
+  #invoice-print-doc .ip-side-name {
+    margin: 1mm 0 0;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: #ffffff;
+  }
+
+  /* Status badge reads instantly on the printed page */
+  #invoice-print-doc .ip-side-badge {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 1.2mm;
+    padding: 1.4mm 3.5mm;
+    border-radius: 6mm;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 0.3mm solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+  }
+
+  #invoice-print-doc .ip-badge-icon {
     width: 3mm;
     height: 3mm;
   }
 
-  #invoice-print-doc .ip-stamp-paid {
-    background: #e9f9f0;
-    border: 0.3mm solid #0f9d58;
-    color: #0f7a45;
+  #invoice-print-doc .ip-badge-paid {
+    background: rgba(15, 157, 88, 0.22);
+    border-color: #34c47c;
+    color: #7ff0b4;
   }
 
-  #invoice-print-doc .ip-stamp-partially_paid {
-    background: #fff6e6;
-    border: 0.3mm solid #d69a2d;
-    color: #9a6b0f;
+  #invoice-print-doc .ip-badge-partially_paid {
+    background: rgba(214, 154, 45, 0.22);
+    border-color: #d8a13a;
+    color: #f5cd7d;
   }
 
-  #invoice-print-doc .ip-stamp-unpaid,
-  #invoice-print-doc .ip-stamp-overdue {
-    background: #fdecec;
-    border: 0.3mm solid #d64545;
-    color: #b23131;
+  #invoice-print-doc .ip-badge-unpaid,
+  #invoice-print-doc .ip-badge-overdue {
+    background: rgba(214, 69, 69, 0.22);
+    border-color: #e06a6a;
+    color: #ffb3b3;
   }
 
-  #invoice-print-doc .ip-stamp-draft,
-  #invoice-print-doc .ip-stamp-cancelled,
-  #invoice-print-doc .ip-stamp-sent {
-    background: #f1f5f9;
-    border: 0.3mm solid #94a3b8;
-    color: #475569;
+  #invoice-print-doc .ip-side-label {
+    display: block;
+    font-size: 6.8px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #8ea3c0;
   }
 
-  #invoice-print-doc .ip-header {
+  #invoice-print-doc .ip-side-value {
+    display: block;
+    margin-top: 0.8mm;
+    font-size: 12px;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'Inter', monospace;
+  }
+
+  #invoice-print-doc .ip-side-grid {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10mm;
-    padding-bottom: 4mm;
-    margin-bottom: 4mm;
-    border-bottom: 0.3mm solid #d8dee8;
+    gap: 4mm;
   }
 
-  /* Latin brand block stays left-aligned and reads as one unit. */
-  #invoice-print-doc .ip-brand {
-    display: flex;
-    align-items: flex-start;
-    gap: 3.5mm;
+  #invoice-print-doc .ip-side-grid > div {
     min-width: 0;
-    text-align: left;
   }
 
-  #invoice-print-doc .ip-logo {
-    width: 15mm;
-    height: 15mm;
-    object-fit: contain;
+  #invoice-print-doc .ip-side-sub {
+    display: block;
+    margin-top: 0.6mm;
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #dbe5f2;
+  }
+
+  /* Headline amount block — the focal point of the sidebar */
+  #invoice-print-doc .ip-side-due {
+    padding: 3mm;
+    border-radius: 1.5mm;
+    background: rgba(255, 255, 255, 0.07);
+    border-inline-start: 1.2mm solid #d8a13a;
+  }
+
+  #invoice-print-doc .ip-side-amount {
+    display: block;
+    margin: 1mm 0 0.8mm;
+    font-size: 15px;
+    font-weight: 800;
+    color: #f0be5c;
+    line-height: 1.2;
+  }
+
+  #invoice-print-doc .ip-side-paidline {
+    display: block;
+    font-size: 7.5px;
+    color: #9fb2cc;
+  }
+
+  #invoice-print-doc .ip-side-qr {
+    display: flex;
+    align-items: center;
+    gap: 2.5mm;
+  }
+
+  #invoice-print-doc .ip-side-qr-box {
+    display: flex;
+    padding: 1.2mm;
+    background: #ffffff;
     border-radius: 1mm;
     flex-shrink: 0;
   }
 
-  #invoice-print-doc .ip-brand-info {
-    min-width: 0;
-  }
-
-  #invoice-print-doc .ip-brand-kicker {
-    display: block;
-    margin-bottom: 0.6mm;
-    font-size: 7.5px;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #d69a2d;
-  }
-
-  #invoice-print-doc .ip-studio-name {
+  #invoice-print-doc .ip-side-qr p {
     margin: 0;
-    font-size: 16px;
+    font-size: 7px;
+    line-height: 1.5;
+    color: #9fb2cc;
+  }
+
+  #invoice-print-doc .ip-side-foot {
+    margin-top: auto;
+    padding-top: 3mm;
+    border-top: 0.25mm solid rgba(255, 255, 255, 0.18);
+    font-size: 7.5px;
+    line-height: 1.7;
+    color: #9fb2cc;
+  }
+
+  #invoice-print-doc .ip-side-foot p {
+    margin: 0;
+  }
+
+  /* ── Main column ─────────────────────────────────────────── */
+  #invoice-print-doc .ip-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 12mm 9mm 10mm;
+  }
+
+  #invoice-print-doc .ip-main-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 5mm;
+    padding-bottom: 3mm;
+    margin-bottom: 4.5mm;
+    border-bottom: 0.6mm solid #0d1b2f;
+  }
+
+  #invoice-print-doc .ip-main-title {
+    margin: 0;
+    font-size: 17px;
     font-weight: 800;
-    letter-spacing: 0.3px;
-    color: #152238;
-    white-space: nowrap;
+    letter-spacing: -0.2px;
+    color: #0d1b2f;
   }
 
-  #invoice-print-doc .ip-brand-rule {
+  #invoice-print-doc .ip-main-sub {
     display: block;
-    width: 18mm;
-    height: 0.7mm;
-    margin: 1.2mm 0 1.6mm;
-    background: #d69a2d;
-  }
-
-  #invoice-print-doc .ip-muted {
-    margin: 0.6mm 0 0;
-    color: #5b6b82;
-    font-size: 9px;
-  }
-
-  #invoice-print-doc .ip-brand-address {
-    max-width: 68mm;
-  }
-
-  #invoice-print-doc .ip-meta {
-    min-width: 62mm;
-    border-inline-start: 1.5mm solid #d69a2d;
-    padding-inline-start: 3mm;
-  }
-
-  #invoice-print-doc .ip-title {
-    font-size: 11px;
-    font-weight: 800;
-    color: #152238;
-    margin-bottom: 1.5mm;
-  }
-
-  #invoice-print-doc .ip-title span:last-child {
-    display: block;
+    margin-top: 0.6mm;
     font-size: 8px;
-    color: #d69a2d;
-    letter-spacing: 1px;
+    font-weight: 700;
+    letter-spacing: 2.4px;
+    text-transform: uppercase;
+    color: #b8891f;
   }
 
-  #invoice-print-doc .ip-row {
+  #invoice-print-doc .ip-main-ref {
+    font-family: 'Inter', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  /* Party cards with a gold rule on the inline start edge */
+  #invoice-print-doc .ip-cards {
+    display: flex;
+    gap: 3.5mm;
+    margin-bottom: 4.5mm;
+  }
+
+  #invoice-print-doc .ip-card {
+    flex: 1;
+    min-width: 0;
+    padding: 2.6mm 3mm;
+    background: #f7f9fc;
+    border-inline-start: 0.9mm solid #d8a13a;
+    border-radius: 0 1.5mm 1.5mm 0;
+  }
+
+  #invoice-print-doc .ip-card h3 {
+    margin: 0 0 1.4mm;
+    font-size: 7.4px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #5b6b82;
+  }
+
+  #invoice-print-doc .ip-card p {
+    margin: 0.5mm 0;
+    font-size: 8.6px;
+  }
+
+  #invoice-print-doc .ip-card-name {
+    font-size: 11px !important;
+    font-weight: 800;
+    color: #0d1b2f;
+  }
+
+  #invoice-print-doc .ip-line {
     display: flex;
     justify-content: space-between;
-    gap: 3mm;
+    gap: 2.5mm;
     padding: 0.5mm 0;
+    font-size: 8.4px;
   }
 
-  #invoice-print-doc .ip-row span {
-    color: #5b6b82;
+  #invoice-print-doc .ip-line span {
+    color: #6b7b93;
   }
 
-  #invoice-print-doc .ip-row strong {
+  #invoice-print-doc .ip-line strong {
     font-weight: 700;
+    text-align: end;
   }
 
-  #invoice-print-doc .ip-status {
-    display: inline-block;
-    margin-top: 1.5mm;
-    padding: 0.8mm 2.5mm;
-    border-radius: 2mm;
-    font-size: 8px;
-    font-weight: 700;
-    background: #f1f5f9;
-    color: #334155;
-  }
-
-  #invoice-print-doc .ip-parties {
-    display: flex;
-    gap: 4mm;
-    margin-bottom: 3.5mm;
-  }
-
-  #invoice-print-doc .ip-party {
-    flex: 1;
-    border: 0.25mm solid #d8dee8;
-    border-radius: 1.5mm;
-    padding: 2.5mm 3mm;
-    min-width: 0;
-  }
-
-  #invoice-print-doc .ip-party h3 {
-    margin: 0 0 1.5mm;
-    padding-bottom: 1mm;
-    border-bottom: 0.2mm solid #e5eaf0;
-    font-size: 8px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: #334155;
-  }
-
-  #invoice-print-doc .ip-party p {
-    margin: 0.6mm 0;
-  }
-
-  #invoice-print-doc .ip-party-name {
-    font-size: 11px;
-    font-weight: 800;
-    color: #152238;
-  }
-
+  /* Clean, rule-based items table (no zebra fill) */
   #invoice-print-doc .ip-table {
     width: 100%;
     border-collapse: collapse;
@@ -936,24 +1017,20 @@
   }
 
   #invoice-print-doc .ip-table thead th {
-    background: #152238;
-    color: #ffffff;
-    font-size: 8px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
     padding: 1.6mm 2mm;
+    font-size: 7.6px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     text-align: start;
+    color: #0d1b2f;
+    border-bottom: 0.5mm solid #0d1b2f;
   }
 
   #invoice-print-doc .ip-table tbody td {
-    padding: 1.5mm 2mm;
-    border-bottom: 0.2mm solid #e5eaf0;
+    padding: 1.8mm 2mm;
     font-size: 9px;
-  }
-
-  #invoice-print-doc .ip-table tbody tr:nth-child(even) td {
-    background: #f6f8fb;
+    border-bottom: 0.2mm solid #e6ebf2;
   }
 
   #invoice-print-doc .ip-col-num {
@@ -962,131 +1039,69 @@
 
   #invoice-print-doc .ip-col-amount {
     text-align: end;
+    font-variant-numeric: tabular-nums;
   }
 
   #invoice-print-doc .ip-bold {
     font-weight: 700;
   }
 
-  #invoice-print-doc .ip-summary {
-    display: flex;
-    gap: 4mm;
-    margin-bottom: 3.5mm;
-    align-items: stretch;
+  #invoice-print-doc .ip-table tfoot td {
+    padding: 1.4mm 2mm;
+    font-size: 8.8px;
   }
 
-  #invoice-print-doc .ip-payments {
-    flex: 1.1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
+  #invoice-print-doc .ip-foot-label {
+    text-align: end;
+    color: #6b7b93;
   }
 
-  #invoice-print-doc .ip-section-title {
-    margin: 0 0 1.5mm;
-    padding-bottom: 1mm;
-    border-bottom: 0.2mm solid #e5eaf0;
-    font-size: 8px;
-    font-weight: 800;
-    color: #334155;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+  #invoice-print-doc .ip-foot-discount {
+    color: #c0392b;
   }
 
-  #invoice-print-doc .ip-payments .ip-row {
-    padding: 1.1mm 0;
-    border-bottom: 0.2mm dotted #e5eaf0;
-  }
-
-  #invoice-print-doc .ip-payments .ip-row strong {
-    color: #0f9d58;
-  }
-
-  #invoice-print-doc .ip-verify {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    gap: 2.5mm;
-    padding: 2.2mm 3mm;
-    border: 0.25mm solid #d8dee8;
-    border-inline-start: 1.2mm solid #0f9d58;
-    border-radius: 1.5mm;
-    background: #f8fbf9;
-    font-size: 8px;
-    line-height: 1.5;
-    color: #4a5b70;
-  }
-
-  #invoice-print-doc .ip-qr-wrap {
-    flex-shrink: 0;
-    display: flex;
-    padding: 1mm;
-    background: #ffffff;
-    border: 0.2mm solid #e5eaf0;
-    border-radius: 1mm;
-  }
-
-  #invoice-print-doc .ip-verify p {
-    margin: 0;
-  }
-
-  #invoice-print-doc .ip-totals {
-    flex: 0.95;
-    border: 0.25mm solid #d8dee8;
-    border-radius: 1.5mm;
-    padding: 3mm;
-    background: #fcfdfe;
-  }
-
-  #invoice-print-doc .ip-totals .ip-row {
-    padding: 0.8mm 0;
-  }
-
-  #invoice-print-doc .ip-grand {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 3mm;
-    margin: 2mm 0;
+  #invoice-print-doc .ip-table tfoot .ip-foot-grand td {
     padding: 2.4mm 3mm;
-    background: #152238;
+    background: #0d1b2f;
     color: #ffffff;
-    border-radius: 1mm;
+    font-size: 11px;
+    font-weight: 800;
   }
 
-  #invoice-print-doc .ip-grand span {
-    color: #f6c453;
-    font-weight: 800;
+  #invoice-print-doc .ip-table tfoot .ip-foot-grand td:first-child {
+    text-align: end;
+    color: #f0be5c;
     font-size: 9px;
   }
 
-  #invoice-print-doc .ip-grand strong {
-    font-size: 13px;
-    font-weight: 800;
+  #invoice-print-doc .ip-words {
+    margin-bottom: 3mm;
+    padding: 2mm 3mm;
+    border: 0.25mm dashed #b8891f;
+    border-radius: 1.5mm;
+    font-size: 8.6px;
+    font-weight: 700;
+    color: #334155;
   }
 
-  #invoice-print-doc .ip-paid strong {
-    color: #0f9d58;
-  }
-
-  #invoice-print-doc .ip-remaining strong {
-    color: #d64545;
+  #invoice-print-doc .ip-words span {
+    color: #b8891f;
   }
 
   #invoice-print-doc .ip-notes {
     margin-bottom: 3mm;
     padding: 2mm 3mm;
-    border: 0.25mm solid #d8dee8;
+    background: #f7f9fc;
     border-radius: 1.5mm;
-    font-size: 9px;
-    color: #334155;
+    font-size: 8.4px;
+    color: #475569;
   }
 
-  /* Signature & stamp handoff strip */
   #invoice-print-doc .ip-signatures {
     display: flex;
-    gap: 6mm;
-    margin: 4mm 0 3mm;
+    gap: 8mm;
+    margin-top: auto;
+    padding-top: 8mm;
   }
 
   #invoice-print-doc .ip-sign-box {
@@ -1098,30 +1113,42 @@
     display: block;
     height: 0;
     margin-bottom: 1.5mm;
-    border-top: 0.25mm dashed #94a3b8;
+    border-top: 0.25mm solid #94a3b8;
   }
 
   #invoice-print-doc .ip-sign-box p {
     margin: 0;
-    font-size: 8px;
-    color: #5b6b82;
+    font-size: 7.6px;
     font-weight: 600;
+    color: #6b7b93;
   }
 
-  #invoice-print-doc .ip-copyright {
+  #invoice-print-doc .ip-main-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 3mm;
-    margin-top: 4mm;
+    margin-top: 5mm;
     padding-top: 2mm;
-    border-top: 0.2mm solid #eef1f5;
-    font-size: 8px;
+    border-top: 0.2mm solid #e6ebf2;
+    font-size: 7.4px;
     color: #9aa7b8;
   }
 
   #invoice-print-doc .ip-doc-ref {
-    font-family: monospace;
+    font-family: 'Inter', monospace;
+  }
+
+  /* Keep logical blocks from splitting across pages */
+  #invoice-print-doc .ip-card,
+  #invoice-print-doc .ip-table tr,
+  #invoice-print-doc .ip-signatures {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #invoice-print-doc .ip-table thead {
+    display: table-header-group;
   }
 }
 
@@ -1242,49 +1269,3 @@
   background: #e2e8f0;
 }
 
-/* Print: A4 frame + watermark */
-@media print {
-  @page {
-    size: A4;
-    margin: 10mm 12mm;
-  }
-
-  #invoice-print-doc {
-    position: relative;
-    padding: 6mm 8mm;
-    border: 0.35mm solid #cbd5e1;
-    border-radius: 2mm;
-    font-family: 'Tajawal', 'Cairo', sans-serif;
-  }
-
-  #invoice-print-doc .ip-watermark-print {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-22deg);
-    font-size: 60px;
-    font-weight: 900;
-    color: rgba(79, 70, 229, 0.04);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  #invoice-print-doc .ip-amount-words {
-    margin-top: 3mm;
-    padding: 2mm 3mm;
-    border: 0.25mm dashed #94a3b8;
-    border-radius: 1.5mm;
-    font-size: 9.5px;
-    font-weight: 700;
-    color: #334155;
-  }
-
-  #invoice-print-doc .ip-thanks {
-    margin-top: 3mm;
-    text-align: center;
-    font-size: 10px;
-    font-weight: 800;
-    color: #4f46e5;
-  }
-}
