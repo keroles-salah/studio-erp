@@ -595,7 +595,7 @@ export const bookingsService = {
         await tx.invoiceItem.createMany({
           data: equipmentItems.map((e) => ({
             invoiceId: invoice.id,
-            description: `Equipment: ${equipmentNameMap.get(e.equipmentId) ?? e.equipmentId}`,
+            description: equipmentNameMap.get(e.equipmentId) ?? e.equipmentId,
             itemType: 'EQUIPMENT' as const,
             referenceId: e.equipmentId,
             quantity: e.quantity,

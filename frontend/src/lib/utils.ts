@@ -435,17 +435,17 @@ const CURRENCY_FRACTION: Record<string, string> = {
   EUR: 'سنت',
 };
 
-/** Convert a monetary amount to Arabic words, e.g. "ألفان وخمسمائة ريال سعودي فقط لا غير". */
+/** Convert a monetary amount to Arabic words, e.g. "فقط ألفان وخمسمائة ريال سعودي لا غير". */
 export function amountToArabicWords(amount: number, currency: string = 'SAR'): string {
   const abs = Math.abs(Number(amount) || 0);
   const major = Math.floor(abs);
   const minor = Math.round((abs - major) * 100);
   const currencyLabel = CURRENCY_ARABIC[currency] ?? currency;
 
-  let result = `${numberToArabicWords(major)} ${currencyLabel}`;
+  let result = `فقط ${numberToArabicWords(major)} ${currencyLabel}`;
   if (minor > 0) {
-    const fractionLabel = CURRENCY_FRACTION[currency] ?? 'جزء من مائة';
+    const fractionLabel = CURRENCY_FRACTION[currency] ?? 'هللة';
     result += ` و${numberToArabicWords(minor)} ${fractionLabel}`;
   }
-  return `${result} فقط لا غير`;
+  return `${result} لا غير`;
 }

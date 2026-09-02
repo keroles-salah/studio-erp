@@ -468,7 +468,7 @@ export default function InvoiceDetail() {
               <div className="space-y-1 text-[11px] print:text-[9.5px]">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500">رقم الفاتورة:</span>
-                  <span className="font-mono font-black text-slate-950" dir="ltr">{data.invoiceNumber}</span>
+                  <bdi className="font-mono font-black text-slate-950" dir="ltr">{data.invoiceNumber}</bdi>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500">تاريخ الإصدار:</span>
@@ -519,22 +519,22 @@ export default function InvoiceDetail() {
                   {data.studio.name}
                 </h1>
                 {data.studio.crNumber && (
-                  <p className="text-[11px] text-slate-600 print:text-[9.5px]">
-                    <strong className="text-slate-800">السجل التجاري (CR):</strong>{' '}
-                    <span className="font-mono font-bold text-slate-900">{data.studio.crNumber}</span>
-                  </p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-600 print:text-[9.5px]">
+                    <span className="font-bold text-slate-800">السجل التجاري:</span>
+                    <bdi className="font-mono font-bold text-slate-900" dir="ltr">{data.studio.crNumber}</bdi>
+                  </div>
                 )}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-500 print:text-[8.5px]">
                   {data.studio.phone && (
                     <span className="inline-flex items-center gap-1">
                       <Phone className="h-3 w-3 text-slate-400" />
-                      <span>{data.studio.phone}</span>
+                      <bdi dir="ltr">{data.studio.phone}</bdi>
                     </span>
                   )}
                   {data.studio.email && (
                     <span className="inline-flex items-center gap-1">
                       <Mail className="h-3 w-3 text-slate-400" />
-                      <span>{data.studio.email}</span>
+                      <bdi dir="ltr">{data.studio.email}</bdi>
                     </span>
                   )}
                   {data.studio.address && (
@@ -559,15 +559,15 @@ export default function InvoiceDetail() {
               <div className="space-y-0.5 text-[11px] print:text-[9.5px]">
                 <p className="font-bold text-slate-950 text-xs">{data.customer.name}</p>
                 {data.customer.phone && (
-                  <p className="flex items-center gap-1 text-slate-600" dir="ltr">
+                  <p className="flex items-center gap-1 text-slate-600">
                     <Phone className="h-3 w-3 text-slate-400" />
-                    <span>{data.customer.phone}</span>
+                    <bdi dir="ltr">{data.customer.phone}</bdi>
                   </p>
                 )}
                 {data.customer.email && (
-                  <p className="flex items-center gap-1 text-slate-600" dir="ltr">
+                  <p className="flex items-center gap-1 text-slate-600">
                     <Mail className="h-3 w-3 text-slate-400" />
-                    <span className="truncate">{data.customer.email}</span>
+                    <bdi dir="ltr" className="truncate">{data.customer.email}</bdi>
                   </p>
                 )}
                 {data.customer.address && (
@@ -589,7 +589,7 @@ export default function InvoiceDetail() {
                 <div className="space-y-0.5 text-[11px] print:text-[9.5px] text-slate-600">
                   <p className="flex items-center justify-between">
                     <span>رقم الحجز:</span>
-                    <strong className="font-mono text-primary-700 font-bold" dir="ltr">{data.booking.number}</strong>
+                    <bdi className="font-mono text-primary-700 font-bold" dir="ltr">{data.booking.number}</bdi>
                   </p>
                   <p className="flex items-center justify-between">
                     <span>نوع الفعالية:</span>
@@ -630,9 +630,9 @@ export default function InvoiceDetail() {
                 </p>
                 <div className="pt-0.5">
                   <span className="block text-[10px] text-slate-500">رقم الآيبان (IBAN):</span>
-                  <strong className="block font-mono text-xs font-bold text-slate-950 break-all" dir="ltr">
+                  <bdi className="block font-mono text-xs font-bold text-slate-950 break-all" dir="ltr">
                     {data.studio.iban}
-                  </strong>
+                  </bdi>
                 </div>
               </div>
             </div>
@@ -653,20 +653,23 @@ export default function InvoiceDetail() {
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {data.items?.length > 0 ? (
-                  data.items.map((item, idx) => (
-                    <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
-                      <td className="px-3 py-2 font-mono text-slate-400">{idx + 1}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-900" dir="auto">{item.description}</td>
-                      <td className="px-3 py-2 text-center font-mono font-medium text-slate-700">{item.quantity}</td>
-                      <td className="px-3 py-2 text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</td>
-                      {data.discount > 0 && (
-                        <td className="px-3 py-2 text-end font-mono text-emerald-600">
-                          {item.discount ? `- ${formatCurrency(item.discount)}` : '—'}
-                        </td>
-                      )}
-                      <td className="px-3 py-2 text-end font-mono font-bold text-slate-950">{formatCurrency(item.total)}</td>
-                    </tr>
-                  ))
+                  data.items.map((item, idx) => {
+                    const cleanDescription = item.description?.replace(/^Equipment:\s*/i, '').trim() || item.description;
+                    return (
+                      <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
+                        <td className="px-3 py-2 font-mono text-slate-400">{idx + 1}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-900" dir="auto">{cleanDescription}</td>
+                        <td className="px-3 py-2 text-center font-mono font-medium text-slate-700">{item.quantity}</td>
+                        <td className="px-3 py-2 text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</td>
+                        {data.discount > 0 && (
+                          <td className="px-3 py-2 text-end font-mono text-emerald-600">
+                            {item.discount ? `- ${formatCurrency(item.discount)}` : '—'}
+                          </td>
+                        )}
+                        <td className="px-3 py-2 text-end font-mono font-bold text-slate-950">{formatCurrency(item.total)}</td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={data.discount > 0 ? 6 : 5} className="py-4 text-center text-slate-400">
@@ -722,7 +725,7 @@ export default function InvoiceDetail() {
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                       <span className="font-semibold text-slate-800">{getPaymentMethodLabel(p.method)}</span>
-                      {p.reference !== '-' && <span className="font-mono text-slate-500">({p.reference})</span>}
+                      {p.reference !== '-' && <bdi dir="ltr" className="font-mono text-slate-500">({p.reference})</bdi>}
                       <span className="text-slate-400">| {formatDate(p.date)}</span>
                     </div>
                     <span className="font-mono font-bold text-emerald-700">{formatCurrency(p.amount)}</span>
@@ -769,28 +772,31 @@ export default function InvoiceDetail() {
             </span>
           </div>
 
-          {/* Amount In Words (Tafqeet) */}
-          <div className="invoice-amount-words">
-            <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
-            <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
-          </div>
+          {/* Bottom Row: Tafqeet & Notes on Right, Electronic Verification QR on Left */}
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-12 items-stretch pt-1">
+            {/* Right side: Tafqeet & Notes */}
+            <div className="sm:col-span-7 flex flex-col justify-between gap-2">
+              {/* Amount In Words (Tafqeet) */}
+              <div className="invoice-amount-words">
+                <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
+                <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
+              </div>
 
-          {/* Terms / Notes if available */}
-          {data.notes && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2.5 text-[11px] print:text-[9px]">
-              <h4 className="font-bold text-slate-800 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
-              <p className="text-slate-600" dir="auto">{data.notes}</p>
+              {/* Terms / Notes if available */}
+              {data.notes && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2 text-[11px] print:text-[9px]">
+                  <h4 className="font-bold text-slate-800 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
+                  <p className="text-slate-600" dir="auto">{data.notes}</p>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Verification Badge + Signatures */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-12 items-center pt-2">
-            {/* Verification QR Box */}
-            <div className="sm:col-span-6 flex items-center gap-3 rounded-xl border border-slate-200 p-2 bg-white print:border-slate-300">
+            {/* Left side: Electronic Verification QR Badge */}
+            <div className="sm:col-span-5 flex items-center gap-3 rounded-xl border border-slate-200 p-2.5 bg-slate-50/50 print:bg-white print:border-slate-300">
               <div className="shrink-0 rounded-lg border border-slate-200 p-1 bg-white">
                 <QRCodeSVG
                   value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
-                  size={54}
+                  size={58}
                   bgColor="#ffffff"
                   fgColor="#0f172a"
                   level="M"
@@ -801,32 +807,16 @@ export default function InvoiceDetail() {
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                   فاتورة إلكترونية معتمدة
                 </p>
-                <p className="leading-tight text-slate-500">امسح الرمز للتحقق من صحة الفاتورة.</p>
+                <p className="leading-tight text-slate-500">امسح الرمز للتحقق من صحة بيانات الفاتورة.</p>
                 <span className="invoice-verify-chip" dir="ltr">
                   ✓ {data.invoiceNumber}
                 </span>
               </div>
             </div>
-
-            {/* Official Signatures */}
-            <div className="sm:col-span-6 flex gap-4 text-center">
-              <div className="flex-1 rounded-xl border border-dashed border-slate-300 p-2.5 bg-slate-50/40 print:bg-white">
-                <div className="h-7" />
-                <div className="border-t border-slate-300 pt-1 text-[9.5px] font-bold text-slate-700">
-                  توقيع المستلم · Customer
-                </div>
-              </div>
-              <div className="flex-1 rounded-xl border border-dashed border-slate-300 p-2.5 bg-slate-50/40 print:bg-white">
-                <div className="h-7" />
-                <div className="border-t border-slate-300 pt-1 text-[9.5px] font-bold text-slate-700">
-                  ختم واعتماد الاستوديو · Stamp
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Official Footer */}
-          <div className="border-t border-slate-200 pt-2.5 space-y-1.5 print:pt-1">
+          <div className="border-t border-slate-200 pt-2.5 space-y-1 print:pt-1">
             <p className="text-center text-[11px] font-bold text-primary-700 print:text-[8.5px]">
               شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم بأعلى معايير الجودة
             </p>
@@ -834,7 +824,7 @@ export default function InvoiceDetail() {
               <p>© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
               <p className="flex items-center gap-1 font-mono">
                 <FileCheck className="h-3 w-3 shrink-0 text-slate-400" />
-                <span>Doc Ref: {data.id}</span>
+                <bdi dir="ltr">Doc Ref: {data.id}</bdi>
               </p>
             </div>
           </div>
