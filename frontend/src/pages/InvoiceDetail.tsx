@@ -482,15 +482,15 @@ export default function InvoiceDetail() {
                 )}
                 <div className="mt-1 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-1.5">
                   <span className="font-bold text-slate-700">المبلغ الإجمالي:</span>
-                  <span className="font-mono text-sm font-black text-primary-700 print:text-xs">{formatCurrency(data.total)}</span>
+                  <span className="font-mono text-sm font-black text-primary-700 print:text-xs whitespace-nowrap">{formatCurrency(data.total)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-emerald-700">المسدد:</span>
-                  <span className="font-mono font-bold text-emerald-700">{formatCurrency(data.paid)}</span>
+                  <span className="font-mono font-bold text-emerald-700 whitespace-nowrap">{formatCurrency(data.paid)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-red-600">المتبقي:</span>
-                  <span className={`font-mono font-bold ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <span className={`font-mono font-bold whitespace-nowrap ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                     {formatCurrency(data.remaining)}
                   </span>
                 </div>
@@ -643,12 +643,12 @@ export default function InvoiceDetail() {
             <table className="w-full text-start text-[11px] print:text-[9.5px]">
               <thead>
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
-                  <th className="w-8 px-3 py-2 text-start font-bold uppercase">#</th>
+                  <th className="w-8 px-3 py-2 text-start font-bold uppercase whitespace-nowrap">#</th>
                   <th className="px-3 py-2 text-start font-bold uppercase">الخدمة / البند (Description)</th>
-                  <th className="w-16 px-3 py-2 text-center font-bold uppercase">الكمية</th>
-                  <th className="w-28 px-3 py-2 text-end font-bold uppercase">سعر الوحدة</th>
-                  {data.discount > 0 && <th className="w-24 px-3 py-2 text-end font-bold uppercase">الخصم</th>}
-                  <th className="w-28 px-3 py-2 text-end font-bold uppercase">المجموع</th>
+                  <th className="w-16 px-3 py-2 text-center font-bold uppercase whitespace-nowrap">الكمية</th>
+                  <th className="w-28 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">سعر الوحدة</th>
+                  {data.discount > 0 && <th className="w-24 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">الخصم</th>}
+                  <th className="w-28 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">المجموع</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -657,16 +657,16 @@ export default function InvoiceDetail() {
                     const cleanDescription = item.description?.replace(/^Equipment:\s*/i, '').trim() || item.description;
                     return (
                       <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
-                        <td className="px-3 py-2 font-mono text-slate-400">{idx + 1}</td>
+                        <td className="px-3 py-2 font-mono text-slate-400 whitespace-nowrap">{idx + 1}</td>
                         <td className="px-3 py-2 font-semibold text-slate-900" dir="auto">{cleanDescription}</td>
-                        <td className="px-3 py-2 text-center font-mono font-medium text-slate-700">{item.quantity}</td>
-                        <td className="px-3 py-2 text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</td>
+                        <td className="px-3 py-2 text-center font-mono font-medium text-slate-700 whitespace-nowrap">{item.quantity}</td>
+                        <td className="px-3 py-2 text-end font-mono text-slate-600 whitespace-nowrap">{formatCurrency(item.unitPrice)}</td>
                         {data.discount > 0 && (
-                          <td className="px-3 py-2 text-end font-mono text-emerald-600">
+                          <td className="px-3 py-2 text-end font-mono text-emerald-600 whitespace-nowrap">
                             {item.discount ? `- ${formatCurrency(item.discount)}` : '—'}
                           </td>
                         )}
-                        <td className="px-3 py-2 text-end font-mono font-bold text-slate-950">{formatCurrency(item.total)}</td>
+                        <td className="px-3 py-2 text-end font-mono font-bold text-slate-950 whitespace-nowrap">{formatCurrency(item.total)}</td>
                       </tr>
                     );
                   })
@@ -680,28 +680,28 @@ export default function InvoiceDetail() {
               </tbody>
               <tfoot className="border-t-2 border-slate-200 bg-slate-50/90 font-semibold print:bg-white">
                 <tr>
-                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-1.5 text-end text-slate-600">
+                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-1.5 text-end text-slate-600 whitespace-nowrap">
                     المجموع الفرعي:
                   </td>
-                  <td className="px-3 py-1.5 text-end font-mono font-bold text-slate-900">
+                  <td className="px-3 py-1.5 text-end font-mono font-bold text-slate-900 whitespace-nowrap">
                     {formatCurrency(data.subtotal)}
                   </td>
                 </tr>
                 {data.discount > 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-1.5 text-end text-emerald-700">
+                    <td colSpan={5} className="px-3 py-1.5 text-end text-emerald-700 whitespace-nowrap">
                       الخصم المطبق:
                     </td>
-                    <td className="px-3 py-1.5 text-end font-mono font-bold text-emerald-700">
+                    <td className="px-3 py-1.5 text-end font-mono font-bold text-emerald-700 whitespace-nowrap">
                       - {formatCurrency(data.discount)}
                     </td>
                   </tr>
                 )}
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
-                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-2 text-end font-black text-amber-400 text-xs">
+                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-2 text-end font-black text-amber-400 text-xs whitespace-nowrap">
                     الإجمالي المستحق:
                   </td>
-                  <td className="px-3 py-2 text-end font-mono text-base font-black text-white print:text-xs">
+                  <td className="px-3 py-2 text-end font-mono text-base font-black text-white print:text-xs whitespace-nowrap">
                     {formatCurrency(data.total)}
                   </td>
                 </tr>

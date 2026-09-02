@@ -37,10 +37,12 @@ export function formatCurrency(
       BHD: 'د.ب',
       OMR: 'ر.ع',
     };
-    return `${n.toLocaleString('ar-EG', {
+    const formattedNum = n.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    })} ${arSymbols[cur] || cur}`;
+    });
+    // Non-breaking space \u00A0 ensures "ر.س" NEVER wraps to a second line
+    return `${formattedNum}\u00A0${arSymbols[cur] || cur}`;
   }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
