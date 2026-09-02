@@ -834,27 +834,37 @@ export default function InvoiceDetail() {
         </div>
       </div>
 
-      {/* Print-only invoice document (flat, single-page) */}
+      {/* Print-only invoice document (flat, single-page, premium print layout) */}
       <div id="invoice-print-doc" className="hidden print:block">
         <div className="ip-doc" dir="rtl">
           <div className="ip-accent" />
           <div className="ip-watermark-print">{data.studio.name}</div>
+          <div
+            className={`ip-stamp ip-stamp-${data.status.toLowerCase()}`}
+          >
+            {isPaid && <CheckCircle2 className="ip-stamp-icon" />}
+            {getInvoiceStatusLabel(data.status)}
+          </div>
+
           <div className="ip-body">
+            {/* Header: document meta right, brand identity left (RTL) */}
             <div className="ip-header">
               <div className="ip-meta">
                 <div className="ip-title">
-                  <span>فاتورة رسمية</span>
+                  <span>فاتورة ضريبية رسمية</span>
+                  <span>TAX INVOICE</span>
                 </div>
                 <div className="ip-row"><span>رقم الفاتورة</span><strong dir="ltr">{data.invoiceNumber}</strong></div>
                 <div className="ip-row"><span>تاريخ الإصدار</span><strong>{formatDate(data.date)}</strong></div>
                 {data.dueDate && <div className="ip-row"><span>تاريخ الاستحقاق</span><strong>{formatDate(data.dueDate)}</strong></div>}
-                <div className="ip-status">{getInvoiceStatusLabel(data.status)}</div>
               </div>
+
               <div className="ip-brand" dir="ltr">
                 {data.studio.logo && (
                   <img src={data.studio.logo} alt="Logo" className="ip-logo" />
                 )}
                 <div className="ip-brand-info">
+                  <span className="ip-brand-kicker">{BRAND_NAME} · STUDIO</span>
                   <h1 className="ip-studio-name">{data.studio.name}</h1>
                   <span className="ip-brand-rule" />
                   <p className="ip-muted">
@@ -930,7 +940,18 @@ export default function InvoiceDetail() {
                     ))}
                   </>
                 )}
-                <div className="ip-verify">فاتورة إلكترونية معتمدة — موثقة إلكترونياً · {data.invoiceNumber}</div>
+                <div className="ip-verify">
+                  <div className="ip-qr-wrap">
+                    <QRCodeSVG
+                      value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
+                      size={44}
+                      bgColor="#ffffff"
+                      fgColor="#152238"
+                      level="M"
+                    />
+                  </div>
+                  <p>فاتورة إلكترونية معتمدة — موثقة إلكترونياً<br />امسح الرمز للتحقق · {data.invoiceNumber}</p>
+                </div>
               </div>
               <div className="ip-totals">
                 <div className="ip-row"><span>المجموع الفرعي</span><strong>{formatCurrency(data.subtotal)}</strong></div>
@@ -943,20 +964,35 @@ export default function InvoiceDetail() {
               </div>
             </div>
 
-            {data.notes && (
-              <div className="ip-notes">
-                <strong>الشروط والأحكام / ملاحظات:</strong> <span>{data.notes}</span>
-              </div>
-            )}
-
             <div className="ip-amount-words">
               <span>المبلغ كتابةً: </span>
               {amountToArabicWords(data.total, data.studio.currency)}
             </div>
 
+            {data.notes && (
+              <div className="ip-notes">
+                <strong>الشروط والأحكام / ملاحظات:</strong> <span dir="auto">{data.notes}</span>
+              </div>
+            )}
+
+            {/* Signature & official stamp section for handoff */}
+            <div className="ip-signatures">
+              <div className="ip-sign-box">
+                <span className="ip-sign-line" />
+                <p>توقيع المستلم · Customer Signature</p>
+              </div>
+              <div className="ip-sign-box ip-sign-stamp">
+                <span className="ip-sign-line" />
+                <p>ختم واعتماد الاستوديو · Authorized Stamp</p>
+              </div>
+            </div>
+
             <div className="ip-thanks">شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم</div>
 
-            <div className="ip-copyright">© {new Date().getFullYear()} {data.studio.name} · جميع الحقوق محفوظة</div>
+            <div className="ip-copyright">
+              <span>© {new Date().getFullYear()} {data.studio.name} · جميع الحقوق محفوظة</span>
+              <span className="ip-doc-ref">Doc Ref: {data.id}</span>
+            </div>
           </div>
         </div>
       </div>

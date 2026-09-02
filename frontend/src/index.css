@@ -707,6 +707,7 @@
   }
 
   #invoice-print-doc .ip-doc {
+    position: relative;
     font-family: 'Cairo', 'Inter', sans-serif;
     color: #16223b;
     font-size: 10px;
@@ -726,6 +727,57 @@
 
   #invoice-print-doc .ip-body {
     padding: 4.5mm 2mm 0;
+  }
+
+  /* Corner status stamp: reads instantly on a printed page. */
+  #invoice-print-doc .ip-stamp {
+    position: absolute;
+    top: 8mm;
+    inset-inline-end: 2mm;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1.2mm;
+    padding: 1.6mm 4mm;
+    border-radius: 1mm;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transform: rotate(3deg);
+    box-shadow: 0 0.5mm 1.5mm rgba(15, 23, 42, 0.12);
+  }
+
+  #invoice-print-doc .ip-stamp-icon {
+    width: 3mm;
+    height: 3mm;
+  }
+
+  #invoice-print-doc .ip-stamp-paid {
+    background: #e9f9f0;
+    border: 0.3mm solid #0f9d58;
+    color: #0f7a45;
+  }
+
+  #invoice-print-doc .ip-stamp-partially_paid {
+    background: #fff6e6;
+    border: 0.3mm solid #d69a2d;
+    color: #9a6b0f;
+  }
+
+  #invoice-print-doc .ip-stamp-unpaid,
+  #invoice-print-doc .ip-stamp-overdue {
+    background: #fdecec;
+    border: 0.3mm solid #d64545;
+    color: #b23131;
+  }
+
+  #invoice-print-doc .ip-stamp-draft,
+  #invoice-print-doc .ip-stamp-cancelled,
+  #invoice-print-doc .ip-stamp-sent {
+    background: #f1f5f9;
+    border: 0.3mm solid #94a3b8;
+    color: #475569;
   }
 
   #invoice-print-doc .ip-header {
@@ -757,6 +809,16 @@
 
   #invoice-print-doc .ip-brand-info {
     min-width: 0;
+  }
+
+  #invoice-print-doc .ip-brand-kicker {
+    display: block;
+    margin-bottom: 0.6mm;
+    font-size: 7.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #d69a2d;
   }
 
   #invoice-print-doc .ip-studio-name {
@@ -942,6 +1004,9 @@
 
   #invoice-print-doc .ip-verify {
     margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 2.5mm;
     padding: 2.2mm 3mm;
     border: 0.25mm solid #d8dee8;
     border-inline-start: 1.2mm solid #0f9d58;
@@ -950,6 +1015,19 @@
     font-size: 8px;
     line-height: 1.5;
     color: #4a5b70;
+  }
+
+  #invoice-print-doc .ip-qr-wrap {
+    flex-shrink: 0;
+    display: flex;
+    padding: 1mm;
+    background: #ffffff;
+    border: 0.2mm solid #e5eaf0;
+    border-radius: 1mm;
+  }
+
+  #invoice-print-doc .ip-verify p {
+    margin: 0;
   }
 
   #invoice-print-doc .ip-totals {
@@ -1004,13 +1082,46 @@
     color: #334155;
   }
 
+  /* Signature & stamp handoff strip */
+  #invoice-print-doc .ip-signatures {
+    display: flex;
+    gap: 6mm;
+    margin: 4mm 0 3mm;
+  }
+
+  #invoice-print-doc .ip-sign-box {
+    flex: 1;
+    text-align: center;
+  }
+
+  #invoice-print-doc .ip-sign-line {
+    display: block;
+    height: 0;
+    margin-bottom: 1.5mm;
+    border-top: 0.25mm dashed #94a3b8;
+  }
+
+  #invoice-print-doc .ip-sign-box p {
+    margin: 0;
+    font-size: 8px;
+    color: #5b6b82;
+    font-weight: 600;
+  }
+
   #invoice-print-doc .ip-copyright {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3mm;
     margin-top: 4mm;
     padding-top: 2mm;
     border-top: 0.2mm solid #eef1f5;
-    text-align: center;
     font-size: 8px;
     color: #9aa7b8;
+  }
+
+  #invoice-print-doc .ip-doc-ref {
+    font-family: monospace;
   }
 }
 
