@@ -126,6 +126,7 @@ export class EquipmentService {
         brand: data.brand ?? null,
         model: data.model ?? null,
         serialNumber: data.serialNumber ?? null,
+        quantity: data.quantity ?? 1,
         ownershipType: data.ownershipType,
         purchasePrice: data.purchasePrice ?? null,
         rentalCost: data.rentalCost ?? null,
@@ -158,6 +159,7 @@ export class EquipmentService {
     if (data.brand !== undefined) updateData.brand = data.brand;
     if (data.model !== undefined) updateData.model = data.model;
     if (data.serialNumber !== undefined) updateData.serialNumber = data.serialNumber;
+    if (data.quantity !== undefined) updateData.quantity = data.quantity;
     if (data.ownershipType !== undefined) updateData.ownershipType = data.ownershipType;
     if (data.purchasePrice !== undefined) updateData.purchasePrice = data.purchasePrice;
     if (data.rentalCost !== undefined) updateData.rentalCost = data.rentalCost;
@@ -207,7 +209,7 @@ export class EquipmentService {
 
     const equipmentItems = await prisma.equipment.findMany({
       where: equipmentWhere,
-      select: { id: true, equipmentCode: true, name: true, status: true },
+      select: { id: true, equipmentCode: true, name: true, status: true, quantity: true },
     });
 
     // Fetch active booking-equipment links that could overlap (broad net).
@@ -263,16 +265,23 @@ export class EquipmentService {
       conflictMap.set(cb.equipmentId, existing);
     }
 
-    // Build the availability result
+    // Build the availability result (capacity-aware: stock minus booked quantity)
+    const unavailableFlags = ['MAINTENANCE', 'DAMAGED', 'LOST', 'UNAVAILABLE'];
     const items = equipmentItems.map((eq) => {
       const conflicts = conflictMap.get(eq.id) ?? [];
-      const isAvailable = conflicts.length === 0 && eq.status === 'AVAILABLE';
+      const totalUnits = eq.quantity;
+      const bookedUnits = conflicts.reduce((sum, c) => sum + (c.quantity || 0), 0);
+      const availableUnits = Math.max(0, totalUnits - bookedUnits);
+      const isAvailable = !unavailableFlags.includes(eq.status) && availableUnits > 0;
 
       return {
         id: eq.id,
         equipmentCode: eq.equipmentCode,
         name: eq.name,
         status: eq.status,
+        quantity: totalUnits,
+        bookedUnits,
+        availableUnits,
         isAvailable,
         conflicts: conflicts.map((c) => ({
           bookingId: c.booking.id,
@@ -303,7 +312,7 @@ export class EquipmentService {
   // ─── Equipment statistics ───────────────────────────────────────────
 
   async getEquipmentStats() {
-    const [byStatus, byCategory, byOwnershipType, total] = await Promise.all([
+    const [byStatus, byCategory, byOwnershipType, total, unitsAgg] = await Promise.all([
       prisma.equipment.groupBy({
         by: ['status'],
         where: { deletedAt: null },
@@ -320,10 +329,15 @@ export class EquipmentService {
         _count: { id: true },
       }),
       prisma.equipment.count({ where: { deletedAt: null } }),
+      prisma.equipment.aggregate({
+        where: { deletedAt: null },
+        _sum: { quantity: true },
+      }),
     ]);
 
     return {
       total,
+      totalUnits: unitsAgg._sum.quantity ?? 0,
       byStatus: byStatus.map((s) => ({ status: s.status, count: s._count.id })),
       byCategory: byCategory.map((c) => ({ category: c.category, count: c._count.id })),
       byOwnershipType: byOwnershipType.map((o) => ({

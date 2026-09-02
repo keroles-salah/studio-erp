@@ -104,8 +104,10 @@ function calculateTotals(input: TotalsInput): TotalsResult {
 
 
 /**
- * Check if any equipment in the list is already booked on the same event date.
- * Enforces rule: An equipment cannot be booked twice on the same day.
+ * Check equipment capacity/conflicts for a booking:
+ * - Operational flags (maintenance/lost/damaged/unavailable) block the item.
+ * - Requested quantity may not exceed total stock.
+ * - Requested + already-booked quantity on the same event day may not exceed stock.
  * Returns an array of conflict descriptions (empty array = no conflicts).
  */
 async function checkEquipmentConflict(
@@ -117,61 +119,114 @@ async function checkEquipmentConflict(
 ): Promise<string[]> {
   const conflicts: string[] = [];
 
-  // Check duplicate equipment within the same submission
-  const seenIds = new Set<string>();
+  // Aggregate requested quantities per equipment id (repeated lines are summed)
+  const requestedMap = new Map<string, number>();
   for (const item of equipmentItems) {
-    if (seenIds.has(item.equipmentId)) {
-      const eq = await prisma.equipment.findUnique({ where: { id: item.equipmentId }, select: { name: true, equipmentCode: true } });
-      conflicts.push(`المعدة "${eq?.name || item.equipmentId}" مكررة في نفس طلب الحجز`);
+    const qty = Number.isInteger(item.quantity) ? item.quantity : 1;
+    requestedMap.set(item.equipmentId, (requestedMap.get(item.equipmentId) ?? 0) + qty);
+  }
+  const ids = Array.from(requestedMap.keys());
+  if (ids.length === 0) return conflicts;
+
+  const unavailableFlags = ['MAINTENANCE', 'DAMAGED', 'LOST', 'UNAVAILABLE'];
+
+  const equipments = await prisma.equipment.findMany({
+    where: { id: { in: ids }, deletedAt: null },
+    select: { id: true, name: true, equipmentCode: true, quantity: true, status: true },
+  });
+  const equipmentMap = new Map(equipments.map((e) => [e.id, e]));
+
+  // (1) Operational unavailability + total stock check (date-independent)
+  for (const [eqId, requestedQty] of requestedMap) {
+    const eq = equipmentMap.get(eqId);
+    if (!eq) {
+      conflicts.push(`المعدة المطلوبة غير موجودة (${eqId})`);
+      continue;
     }
-    seenIds.add(item.equipmentId);
+    if (unavailableFlags.includes(eq.status)) {
+      conflicts.push(`المعدة "${eq.name} (${eq.equipmentCode})" غير متاحة للحجز حالياً (في الصيانة/تالفة/مفقودة).`);
+      continue;
+    }
+    if (requestedQty > eq.quantity) {
+      conflicts.push(
+        `المعدة "${eq.name} (${eq.equipmentCode})": الكمية المطلوبة ${requestedQty} أكبر من إجمالي المتوفر (${eq.quantity}).`,
+      );
+    }
   }
 
-  // Define full day window for the target event date (UTC-safe boundary)
+  // Full-day window of the target event date (UTC-safe boundaries)
   const target = new Date(eventDate);
   const dayStart = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate(), 0, 0, 0, 0));
   const dayEnd = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate() + 1, 0, 0, 0, 0));
+  const dateStr = target.toISOString().split('T')[0];
 
-  for (const item of equipmentItems) {
-    const existing = await prisma.bookingEquipment.findMany({
-      where: {
-        equipmentId: item.equipmentId,
-        booking: {
-          status: { notIn: ['CANCELLED'] },
-          deletedAt: null,
-          ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
-          event: {
-            eventDate: {
-              gte: dayStart,
-              lt: dayEnd,
-            },
-          },
+  // (2) Capacity check on the same day: booked qty + requested qty must not exceed stock
+  const existingRows = await prisma.bookingEquipment.findMany({
+    where: {
+      equipmentId: { in: ids },
+      booking: {
+        status: { notIn: ['CANCELLED'] },
+        deletedAt: null,
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+        event: { eventDate: { gte: dayStart, lt: dayEnd } },
+      },
+    },
+    include: {
+      booking: {
+        select: {
+          id: true,
+          bookingNumber: true,
+          status: true,
+          customer: { select: { fullName: true } },
+          event: { select: { eventDate: true } },
         },
       },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            bookingNumber: true,
-            status: true,
-            customer: { select: { fullName: true } },
-            event: { select: { eventDate: true, startTime: true, endTime: true } },
-          },
-        },
-        equipment: { select: { id: true, name: true, equipmentCode: true } },
-      },
-    });
+      equipment: { select: { id: true, name: true, equipmentCode: true } },
+    },
+  });
 
-    for (const res of existing) {
-      const formattedDate = target.toISOString().split('T')[0];
+  const bookedByEquipment = new Map<string, { qty: number; rows: typeof existingRows }>();
+  for (const row of existingRows) {
+    const entry = bookedByEquipment.get(row.equipmentId) ?? { qty: 0, rows: [] as typeof existingRows };
+    entry.qty += row.quantity;
+    entry.rows.push(row);
+    bookedByEquipment.set(row.equipmentId, entry);
+  }
+
+  for (const [eqId, requestedQty] of requestedMap) {
+    const eq = equipmentMap.get(eqId);
+    const booked = bookedByEquipment.get(eqId);
+    if (!eq || !booked) continue;
+    if (booked.qty + requestedQty > eq.quantity) {
+      const details = booked.rows
+        .map((r) => `الحجز ${r.booking.bookingNumber} (${r.booking.customer?.fullName ?? 'بدون عميل'}) بكمية ${r.quantity}`)
+        .join('، ');
       conflicts.push(
-        `المعدة "${res.equipment.name} (${res.equipment.equipmentCode})" محجوزة بالفعل في نفس اليوم (${formattedDate}) للحجز رقم ${res.booking.bookingNumber}${res.booking.customer?.fullName ? ` للعميل (${res.booking.customer.fullName})` : ''}. لا يمكن حجز نفس المعدة مرتين في نفس اليوم.`,
+        `المعدة "${eq.name} (${eq.equipmentCode})": المتاح يوم ${dateStr} هو ${Math.max(0, eq.quantity - booked.qty)} والمطلوب ${requestedQty} — محجوز منها ${booked.qty} بالفعل (${details}).`,
       );
     }
   }
 
   return conflicts;
 }
+
+
+/**
+ * Merge repeated equipment lines (same equipmentId) into one line, summing quantity.
+ */
+function mergeEquipmentItems<T extends { equipmentId: string; quantity: number }>(items: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of items) {
+    const existing = map.get(item.equipmentId);
+    if (existing) {
+      map.set(item.equipmentId, { ...existing, quantity: existing.quantity + item.quantity });
+    } else {
+      map.set(item.equipmentId, { ...item });
+    }
+  }
+  return Array.from(map.values());
+}
+
 
 
 /**
@@ -375,10 +430,13 @@ export const bookingsService = {
     const serviceNameMap = new Map<string, string>();
     const equipmentNameMap = new Map<string, string>();
 
+    // Merge repeated equipment lines (same item id) into one line with summed quantity
+    const mergedEquipmentItems = mergeEquipmentItems(equipmentItems);
+
     // 1. Pre-check: equipment conflicts
     if (equipmentItems.length > 0) {
       const conflicts = await checkEquipmentConflict(
-        equipmentItems.map((e) => ({ equipmentId: e.equipmentId, quantity: e.quantity })),
+        mergedEquipmentItems.map((e) => ({ equipmentId: e.equipmentId, quantity: e.quantity })),
         eventData.eventDate,
         eventData.startTime,
         eventData.endTime,
@@ -425,7 +483,7 @@ export const bookingsService = {
 
     // 4. Verify all equipment exists
     if (equipmentItems.length > 0) {
-      const equipmentIds = equipmentItems.map((e) => e.equipmentId);
+      const equipmentIds = mergedEquipmentItems.map((e) => e.equipmentId);
       const foundEquipment = await prisma.equipment.findMany({
         where: { id: { in: equipmentIds }, deletedAt: null },
         select: { id: true, name: true, status: true },
@@ -443,25 +501,17 @@ export const bookingsService = {
       }
     }
 
-    // 4b. Validate equipment quantity (each equipment is a single physical unit)
-    for (const eq of equipmentItems) {
+    // 4b. Validate equipment quantities are positive integers (capacity is enforced in step 1)
+    for (const eq of mergedEquipmentItems) {
       if (!Number.isInteger(eq.quantity) || eq.quantity < 1) {
         throw { status: 400, code: 'INVALID_EQUIPMENT_QUANTITY', message: 'Equipment quantity must be a positive integer' };
-      }
-      if (eq.quantity > 1) {
-        const eqName = equipmentNameMap.get(eq.equipmentId) || eq.equipmentId;
-        throw {
-          status: 400,
-          code: 'INSUFFICIENT_EQUIPMENT',
-          message: `Cannot book more than 1 unit of "${eqName}" - only 1 unit is available`,
-        };
       }
     }
 
     // 5. Calculate totals (no tax)
     const totals = calculateTotals({
       services: serviceItems,
-      equipment: equipmentItems,
+      equipment: mergedEquipmentItems,
       discount: bookingFields.discount,
     });
 
@@ -527,8 +577,8 @@ export const bookingsService = {
       }
 
       // Create booking equipment + update equipment status
-      if (equipmentItems.length > 0) {
-        for (const eq of equipmentItems) {
+      if (mergedEquipmentItems.length > 0) {
+        for (const eq of mergedEquipmentItems) {
           const totalRevenue = Math.max(0, eq.quantity * eq.unitPrice);
           const totalCost = eq.quantity * eq.rentalCost;
 
@@ -591,9 +641,9 @@ export const bookingsService = {
       }
 
       // Create invoice items from equipment
-      if (equipmentItems.length > 0) {
+      if (mergedEquipmentItems.length > 0) {
         await tx.invoiceItem.createMany({
-          data: equipmentItems.map((e) => ({
+          data: mergedEquipmentItems.map((e) => ({
             invoiceId: invoice.id,
             description: equipmentNameMap.get(e.equipmentId) ?? e.equipmentId,
             itemType: 'EQUIPMENT' as const,

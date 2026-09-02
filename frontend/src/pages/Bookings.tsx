@@ -87,61 +87,75 @@ export default function Bookings() {
     return { subtotal: r2(subtotal), discount: 0, tax: 0, total: r2(subtotal) };
   }, [equipment]);
 
-  // Check if a piece of equipment is booked on a specific calendar date (YYYY-MM-DD)
-  const getGearDateStatus = (gear: any, targetDate: string) => {
-    if (!gear) return { status: 'UNKNOWN', label: '', isBlocked: false };
-    
-    // 1. If equipment is broken or under maintenance
+  // Availability of an equipment ITEM on a date (quantity/capacity model):
+  // available = stock (gear.quantity) − sum of quantities booked that day by active bookings.
+  const getGearAvailability = (gear: any, targetDate: string) => {
+    if (!gear) return { status: 'UNKNOWN', label: '', isBlocked: false, available: 0, stock: 0 };
+    const stock = Math.max(1, Number(gear.quantity) || 1);
+
+    // 1. Operational flags block the whole item
     if (['MAINTENANCE', 'DAMAGED', 'LOST', 'UNAVAILABLE'].includes(gear.status)) {
       return {
         status: gear.status,
         label: `❌ في الصيانة (${getEquipmentStatusLabel(gear.status)})`,
         isBlocked: true,
+        available: 0,
+        stock,
       };
     }
 
-    // 2. If targetDate is specified, check against its active bookings
+    // 2. Capacity check for the target date
+    let booked = 0;
     if (targetDate && Array.isArray(gear.bookings) && gear.bookings.length > 0) {
-      const conflictingBooking = gear.bookings.find((b: any) => {
+      for (const b of gear.bookings) {
         const bEvent = b.booking?.event;
-        if (!bEvent?.eventDate) return false;
+        if (!bEvent?.eventDate) continue;
         const bDateStr = new Date(bEvent.eventDate).toISOString().split('T')[0];
-        return bDateStr === targetDate && b.booking?.status !== 'CANCELLED';
-      });
-
-      if (conflictingBooking) {
-        return {
-          status: 'BOOKED_ON_DATE',
-          label: `⚠️ محجوزة في هذا اليوم (${conflictingBooking.booking?.bookingNumber})`,
-          bookingNumber: conflictingBooking.booking?.bookingNumber,
-          isBlocked: true,
-        };
+        if (bDateStr === targetDate && b.booking?.status !== 'CANCELLED') {
+          booked += Number(b.quantity) || 0;
+        }
       }
+    }
+    const available = Math.max(0, stock - booked);
 
+    if (booked === 0) {
+      return { status: 'AVAILABLE', label: `✔️ متاحة (${stock})`, isBlocked: false, available, stock, booked: 0 };
+    }
+    if (available <= 0) {
       return {
-        status: 'AVAILABLE_ON_DATE',
-        label: `✔️ متاحة في هذا التاريخ`,
-        isBlocked: false,
+        status: 'BOOKED_OUT',
+        label: `⛔ محجوزة بالكامل (${booked}/${stock})`,
+        isBlocked: true,
+        available: 0,
+        stock,
+        booked,
       };
     }
-
     return {
-      status: 'AVAILABLE',
-      label: '✔️ جاهزة للحجز',
+      status: 'PARTIALLY_AVAILABLE',
+      label: `⚠️ متبقي ${available} من ${stock}`,
       isBlocked: false,
+      available,
+      stock,
+      booked,
     };
   };
 
-  // Live Equipment Conflicts for the selected eventDate
+  // Live Equipment Conflicts for the selected eventDate (capacity-based)
   const equipmentConflicts = useMemo(() => {
     const conflicts: string[] = [];
     equipment.forEach(eq => {
       if (!eq.equipmentId) return;
       const found = equipmentList.find(x => x.id === eq.equipmentId);
       if (!found) return;
-      const dateStatus = getGearDateStatus(found, eventDate);
-      if (dateStatus.isBlocked) {
-        conflicts.push(`المعدة "${found.name} (${found.equipmentCode})": ${dateStatus.label}`);
+      const gearAvail = getGearAvailability(found, eventDate);
+      const requested = Math.max(1, Number(eq.quantity) || 1);
+      if (gearAvail.isBlocked) {
+        conflicts.push(`المعدة "${found.name} (${found.equipmentCode})": ${gearAvail.label}`);
+      } else if (requested > gearAvail.available) {
+        conflicts.push(
+          `المعدة "${found.name} (${found.equipmentCode})": الكمية المطلوبة ${requested} أكبر من المتاح (${gearAvail.available})${eventDate ? ` يوم ${eventDate}` : ''}.`,
+        );
       }
     });
     return conflicts;
@@ -380,8 +394,10 @@ export default function Bookings() {
                 </div>
                 {equipment.map((eq, i) => {
                   const selectedGear = equipmentList.find(x => x.id === eq.equipmentId);
-                  const dateStatus = selectedGear ? getGearDateStatus(selectedGear, eventDate) : null;
-                  const isConflict = dateStatus?.isBlocked;
+                  const gearAvail = selectedGear ? getGearAvailability(selectedGear, eventDate) : null;
+                  const requestedQty = Math.max(1, Number(eq.quantity) || 1);
+                  const isConflict = gearAvail ? gearAvail.isBlocked || requestedQty > gearAvail.available : false;
+                  const maxQty = gearAvail ? Math.max(1, gearAvail.available) : 999;
                   const otherSelectedIds = new Set(equipment.filter((_, idx) => idx !== i).map(x => x.equipmentId).filter(Boolean));
                   return (
                     <div key={i} className={`flex flex-wrap gap-2 items-end mb-2 p-3 rounded-lg border ${isConflict ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-transparent'}`}>
@@ -409,21 +425,37 @@ export default function Bookings() {
                           <option value="">{t('booking.selectEquipment')}</option>
                           {equipmentList.map(item => {
                             const isAlreadyChosen = otherSelectedIds.has(item.id);
-                            const itemDateStatus = getGearDateStatus(item, eventDate);
+                            const itemAvail = getGearAvailability(item, eventDate);
                             return (
-                              <option key={item.id} value={item.id} disabled={isAlreadyChosen}>
-                                {item.name} — {item.equipmentCode} [{itemDateStatus.label}]{isAlreadyChosen ? ' [محددة مسبقاً]' : ''}
+                              <option key={item.id} value={item.id} disabled={isAlreadyChosen || itemAvail.isBlocked}>
+                                {item.name} — {item.equipmentCode} [{itemAvail.label}]{isAlreadyChosen ? ' [محددة مسبقاً]' : ''}
                               </option>
                             );
                           })}
                         </select>
-                        {dateStatus && (
-                          <span className={`text-[11px] font-bold mt-1.5 flex items-center gap-1 ${dateStatus.isBlocked ? 'text-amber-700' : 'text-emerald-700'}`}>
-                            {dateStatus.label}
+                        {gearAvail && (
+                          <span className={`text-[11px] font-bold mt-1.5 flex items-center gap-1 ${gearAvail.isBlocked ? 'text-amber-700' : 'text-emerald-700'}`}>
+                            {gearAvail.label}
                           </span>
                         )}
                       </div>
-                      <div className="w-20"><input type="number" value={1} readOnly className="input text-sm bg-slate-100 text-slate-500" title="Quantity is fixed at 1 (each equipment is a single unit)" /></div>
+                      <div className="w-24">
+                        <input
+                          type="number"
+                          min={1}
+                          max={maxQty}
+                          value={eq.quantity}
+                          disabled={!eq.equipmentId}
+                          onChange={e => {
+                            const v = Math.max(1, Math.min(maxQty, parseInt(e.target.value, 10) || 1));
+                            const ne = [...equipment];
+                            ne[i].quantity = v;
+                            setEquipment(ne);
+                          }}
+                          className="input text-sm"
+                          title="الكمية المطلوبة من هذا الصنف (حسب المتاح)"
+                        />
+                      </div>
                       <div className="w-28"><input type="number" value={eq.unitPrice} readOnly className="input text-sm bg-slate-100 text-slate-500" title="سعر المعدة ثابت من كتالوج المعدات" /></div>
                       <button type="button" onClick={() => setEquipment(equipment.filter((_,idx) => idx!==i))} className="text-red-500 hover:text-red-700 p-1"><MinusCircle className="w-4 h-4" /></button>
                     </div>

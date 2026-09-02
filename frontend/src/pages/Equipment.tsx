@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Package, AlertCircle, Wrench, CalendarDays, Plus, X } from 'lucide-react';
@@ -10,6 +10,7 @@ interface Equipment {
   id: string;
   equipmentCode: string;
   name: string;
+  quantity: number;
   category: string;
   brand: string;
   status: string;
@@ -28,6 +29,7 @@ interface Equipment {
 
 interface EquipmentStats {
   total: number;
+  totalUnits?: number;
   byStatus: { status: string; count: number }[];
 }
 
@@ -53,33 +55,30 @@ export default function Equipment() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const qty = Math.min(50, Math.max(1, parseInt(form.quantity, 10) || 1));
-      const base = form.equipmentCode.trim();
-      const created = [];
-      for (let i = 0; i < qty; i++) {
-        const payload: Record<string, unknown> = {
-          equipmentCode: i === 0 ? base : `${base}-${i + 1}`,
-          name: form.name.trim(),
-          category: form.category,
-          brand: form.brand.trim() || null,
-          model: form.model.trim() || null,
-          serialNumber: i === 0 ? (form.serialNumber.trim() || null) : null,
-          ownershipType: form.ownershipType,
-          purchasePrice: form.purchasePrice === '' ? null : parseFloat(form.purchasePrice),
-          rentalPrice: form.rentalPrice === '' ? null : parseFloat(form.rentalPrice),
-          status: form.status,
-          location: form.location.trim() || null,
-          notes: form.notes.trim() || null,
-        };
-        try {
-          const res = await api.post('/equipment', payload);
-          created.push(res.data);
-        } catch (err: any) {
-          const msg = err?.response?.data?.message || err?.response?.data?.error || 'خطأ غير معروف';
-          throw new Error(`فشل إضافة القطعة ${payload.equipmentCode}: ${msg}${created.length ? ` (تمت إضافة ${created.length} قبلها)` : ''}`, { cause: err });
-        }
+      // الكمية تُسجَّل كحقل واحد على الصنف — بدون توليد سجلات مكررة بأكواد متسلسلة
+      const qty = Math.min(999, Math.max(1, parseInt(form.quantity, 10) || 1));
+      const payload: Record<string, unknown> = {
+        equipmentCode: form.equipmentCode.trim(),
+        name: form.name.trim(),
+        category: form.category,
+        brand: form.brand.trim() || null,
+        model: form.model.trim() || null,
+        serialNumber: form.serialNumber.trim() || null,
+        quantity: qty,
+        ownershipType: form.ownershipType,
+        purchasePrice: form.purchasePrice === '' ? null : parseFloat(form.purchasePrice),
+        rentalPrice: form.rentalPrice === '' ? null : parseFloat(form.rentalPrice),
+        status: form.status,
+        location: form.location.trim() || null,
+        notes: form.notes.trim() || null,
+      };
+      try {
+        const res = await api.post('/equipment', payload);
+        return res.data;
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || 'خطأ غير معروف';
+        throw new Error(msg, { cause: err });
       }
-      return created;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
@@ -129,19 +128,6 @@ export default function Equipment() {
     },
   });
 
-  // count of units per tool name
-  const nameCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    (equipment ?? []).forEach((e) => map.set(e.name, (map.get(e.name) ?? 0) + 1));
-    return map;
-  }, [equipment]);
-
-  // unit number = position of this item within its name group
-  const unitNoOf = (e: Equipment) => {
-    const same = (equipment ?? []).filter((x) => x.name === e.name);
-    return same.findIndex((x) => x.id === e.id) + 1;
-  };
-
   const currentBooking = (e: Equipment) => e.bookings?.[0]?.booking ?? null;
 
   const ownershipLabel = (o: string) => (o === 'RENTED' ? 'مستأجرة' : 'مملوكة');
@@ -151,10 +137,13 @@ export default function Equipment() {
 
   const statOf = (s: string) => stats?.byStatus.find((x) => x.status === s)?.count ?? 0;
 
+  const sumUnits = (list: Equipment[] | undefined) =>
+    (list ?? []).reduce((sum, e) => sum + Math.max(0, Number(e.quantity) || 0), 0);
+
   const summary = [
-    { label: 'إجمالي الأدوات', value: stats?.total ?? 0, cls: 'text-slate-900' },
-    { label: 'الأدوات المملوكة', value: (equipment ?? []).filter(e => e.ownershipType === 'OWNED').length, cls: 'text-primary-700' },
-    { label: 'الأدوات المستأجرة', value: (equipment ?? []).filter(e => e.ownershipType === 'RENTED').length, cls: 'text-amber-600' },
+    { label: 'إجمالي القطع', value: stats?.totalUnits ?? sumUnits(equipment), cls: 'text-slate-900' },
+    { label: 'القطع المملوكة', value: sumUnits((equipment ?? []).filter(e => e.ownershipType === 'OWNED')), cls: 'text-primary-700' },
+    { label: 'القطع المستأجرة', value: sumUnits((equipment ?? []).filter(e => e.ownershipType === 'RENTED')), cls: 'text-amber-600' },
   ];
 
   return (
@@ -201,19 +190,16 @@ export default function Equipment() {
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {equipment.map((e) => {
-            const totalUnits = nameCounts.get(e.name) ?? 1;
-            const unitNo = unitNoOf(e);
+            const units = e.quantity ?? 1;
             return (
               <div key={e.id} className="card hover:shadow-md transition-shadow flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
                     <Package className="w-5 h-5 text-slate-500" />
                   </div>
-                  {totalUnits > 1 && (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
-                      {unitNo} / {totalUnits}
-                    </span>
-                  )}
+                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary-700">
+                    عدد {units}
+                  </span>
                 </div>
                 <h3 className="font-semibold text-slate-900 mb-1">{e.name}</h3>
                 <p className="text-xs text-slate-400 mb-3 font-mono">{e.equipmentCode}</p>
@@ -241,23 +227,20 @@ export default function Equipment() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {equipment.map((e) => {
-                  const totalUnits = nameCounts.get(e.name) ?? 1;
-                  return (
+                {equipment.map((e) => (
                     <tr key={e.id} className="table-row-hover">
                       <td className="px-4 py-3 font-mono text-slate-500">{e.equipmentCode}</td>
                       <td className="px-4 py-3 font-medium text-slate-900">{e.name}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                          {totalUnits > 1 ? `${unitNoOf(e)} / ${totalUnits}` : '1'}
+                        <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
+                          {e.quantity ?? 1}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-medium text-primary-700">{e.rentalPrice != null ? formatCurrency(Number(e.rentalPrice)) : '—'}</td>
                       <td className="px-4 py-3 text-slate-600">{ownershipLabel(e.ownershipType)}</td>
                       <td className="px-4 py-3 text-slate-600">{e.location || '—'}</td>
                     </tr>
-                  );
-                })}
+                  ))}
               </tbody>
             </table>
           </div>
@@ -285,9 +268,9 @@ export default function Equipment() {
                   <input value={form.equipmentCode} onChange={(e) => set('equipmentCode', e.target.value)} className="input" placeholder="مثال: CAM-005" required />
                 </div>
                 <div>
-                  <label className="label">العدد</label>
-                  <input type="number" min="1" max="50" value={form.quantity} onChange={(e) => set('quantity', e.target.value)} className="input" />
-                  <p className="text-xs text-slate-400 mt-1">أكثر من 1؟ سيتم توليد أكواد متسلسلة تلقائياً (CAM-005، CAM-005-2، CAM-005-3)</p>
+                  <label className="label">الكمية المتوفرة</label>
+                  <input type="number" min="1" max="999" value={form.quantity} onChange={(e) => set('quantity', e.target.value)} className="input" />
+                  <p className="text-xs text-slate-400 mt-1">تُسجَّل كصنف واحد بهذه الكمية — بدون تكرار أو أكواد متسلسلة</p>
                 </div>
                 <div>
                   <label className="label">الاسم *</label>

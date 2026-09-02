@@ -289,6 +289,7 @@ model Equipment {
   brand         String?
   model         String?
   serialNumber  String?
+  quantity      Int      @default(1)
   ownershipType String   @default("OWNED")
   purchasePrice Decimal?
   rentalCost    Decimal?

@@ -44,7 +44,7 @@ const serviceItemSchema = z.object({
 
 const equipmentItemSchema = z.object({
   equipmentId: z.string().uuid(),
-  quantity: z.number().int().min(1).max(1, 'Equipment quantity cannot exceed 1 (each equipment is a single unit)'),
+  quantity: z.number().int().min(1).max(999, 'Equipment quantity cannot exceed 999'),
   unitPrice: z.number().min(0),
   rentalCost: z.number().min(0).default(0),
   notes: z.string().optional().nullable(),

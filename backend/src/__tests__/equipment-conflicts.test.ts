@@ -5,6 +5,7 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
   let testCustomer: any;
   let testEquipment1: any;
   let testEquipment2: any;
+  let testEquipment3: any;
   let testUser: any;
   const createdBookingIds: string[] = [];
 
@@ -57,6 +58,18 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
         rentalPrice: 400,
       },
     });
+
+    // Setup a 3-unit stock equipment item (quantity-based model)
+    testEquipment3 = await prisma.equipment.create({
+      data: {
+        name: `Sony A7S x3 Test ${Date.now()}`,
+        equipmentCode: `EQ-TEST-A7SX3-${Date.now()}`,
+        category: 'كاميرات',
+        status: 'AVAILABLE',
+        rentalPrice: 400,
+        quantity: 3,
+      },
+    });
   });
 
   afterAll(async () => {
@@ -78,6 +91,9 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
     }
     if (testEquipment2?.id) {
       await prisma.equipment.delete({ where: { id: testEquipment2.id } }).catch(() => {});
+    }
+    if (testEquipment3?.id) {
+      await prisma.equipment.delete({ where: { id: testEquipment3.id } }).catch(() => {});
     }
   });
 
@@ -171,19 +187,44 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
     if (booking?.id) createdBookingIds.push(booking.id);
   });
 
-  it('4. Should REJECT duplicate equipment in the same booking submission', async () => {
+  it('4. Should MERGE repeated equipment lines in one submission into a single line (within stock)', async () => {
+    const booking = await bookingsService.createBookingTransaction(
+      {
+        customerId: testCustomer.id,
+        event: {
+          eventType: 'OTHER',
+          eventDate: new Date('2026-09-12T10:00:00.000Z'),
+        },
+        services: [],
+        equipment: [
+          { equipmentId: testEquipment3.id, quantity: 1, unitPrice: 400, rentalCost: 400 },
+          { equipmentId: testEquipment3.id, quantity: 1, unitPrice: 400, rentalCost: 400 },
+        ],
+        depositRequired: 0,
+        depositPaid: 0,
+        discount: 0,
+      },
+      testUser.id,
+    );
+
+    expect(booking).toBeDefined();
+    expect(booking?.equipment).toHaveLength(1);
+    expect(booking?.equipment[0].quantity).toBe(2);
+    if (booking?.id) createdBookingIds.push(booking.id);
+  });
+
+  it('4b. Should REJECT booking a quantity greater than total stock (qty 2 of a 1-unit item)', async () => {
     await expect(
       bookingsService.createBookingTransaction(
         {
           customerId: testCustomer.id,
           event: {
-            eventType: 'OTHER',
+            eventType: 'PARTY',
             eventDate: new Date('2026-09-20T10:00:00.000Z'),
           },
           services: [],
           equipment: [
-            { equipmentId: testEquipment2.id, quantity: 1, unitPrice: 400, rentalCost: 400 },
-            { equipmentId: testEquipment2.id, quantity: 1, unitPrice: 400, rentalCost: 400 },
+            { equipmentId: testEquipment2.id, quantity: 2, unitPrice: 400, rentalCost: 400 },
           ],
           depositRequired: 0,
           depositPaid: 0,
@@ -246,6 +287,32 @@ describe('Equipment Booking Conflicts & Availability Rules', () => {
           event: {
             eventDate: new Date('2026-09-10T12:00:00.000Z'),
           },
+        },
+        testUser.id,
+      ),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: 'EQUIPMENT_CONFLICT',
+    });
+  });
+
+  it('9. Should REJECT booking more than the REMAINING capacity on the same day (2 of 3 already booked, request 2)', async () => {
+    // Test 4 booked quantity 2 of testEquipment3 on 2026-09-12 (stock 3, remaining 1)
+    await expect(
+      bookingsService.createBookingTransaction(
+        {
+          customerId: testCustomer.id,
+          event: {
+            eventType: 'WEDDING',
+            eventDate: new Date('2026-09-12T18:00:00.000Z'),
+          },
+          services: [],
+          equipment: [
+            { equipmentId: testEquipment3.id, quantity: 2, unitPrice: 400, rentalCost: 400 },
+          ],
+          depositRequired: 0,
+          depositPaid: 0,
+          discount: 0,
         },
         testUser.id,
       ),
