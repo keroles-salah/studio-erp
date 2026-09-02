@@ -135,14 +135,14 @@ export default function Layout({ children }: LayoutProps) {
         <button
           type="button"
           aria-label="إغلاق القائمة"
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden print:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 start-0 z-50 flex w-[17.5rem] flex-col overflow-hidden bg-slate-950 text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 lg:shadow-none',
+          'print:hidden fixed inset-y-0 start-0 z-50 flex w-[17.5rem] flex-col overflow-hidden bg-slate-950 text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 lg:shadow-none',
           sidebarOpen ? 'max-lg:translate-x-0' : 'max-lg:ltr:-translate-x-full max-lg:rtl:translate-x-full',
         )}
       >
@@ -211,8 +211,8 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      <div className="flex min-h-screen min-w-0 flex-col lg:ms-[17.5rem]">
-        <header className="sticky top-0 z-30 flex h-[4.75rem] items-center justify-between border-b border-slate-200/80 bg-white/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <div className="flex min-h-screen min-w-0 flex-col lg:ms-[17.5rem] print:ms-0 print:min-h-0">
+        <header className="sticky top-0 z-30 flex h-[4.75rem] items-center justify-between border-b border-slate-200/80 bg-white/85 px-4 backdrop-blur-xl sm:px-6 lg:px-8 print:hidden">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -242,7 +242,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 print:p-0">{children}</main>
       </div>
     </div>
   );

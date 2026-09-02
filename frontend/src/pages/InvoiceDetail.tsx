@@ -344,10 +344,10 @@ export default function InvoiceDetail() {
   const paidPercent = data.total > 0 ? Math.min(100, Math.round((data.paid / data.total) * 100)) : 100;
 
   return (
-    <div className="relative min-w-0 space-y-6">
+    <div className="invoice-root relative min-w-0 space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 end-5 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 shadow-xl animate-in slide-in-from-top-4">
+        <div className="fixed top-5 end-5 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800 shadow-xl animate-in slide-in-from-top-4 print:hidden">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           <span>{toastMessage}</span>
         </div>
@@ -397,10 +397,21 @@ export default function InvoiceDetail() {
               className="inline-flex w-full md:w-auto items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
               title="إرسال الفاتورة عبر واتساب"
             >
-              <Phone className="h-4 w-4 text-emerald-600" />
+              <MessageCircle className="h-4 w-4 text-emerald-600" />
               <span>مشاركة عبر واتساب</span>
             </button>
           )}
+
+          {/* Download PDF Button */}
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={pdfBusy}
+            className="inline-flex w-full md:w-auto items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            <Download className="h-4 w-4 text-slate-600" />
+            <span>{pdfBusy ? 'جارٍ التحميل...' : 'تحميل PDF'}</span>
+          </button>
 
           {/* Print Button */}
           <button
@@ -414,34 +425,38 @@ export default function InvoiceDetail() {
         </div>
       </div>
 
-      {/* Main Official Invoice Container */}
+      {/* Main Official Invoice Document (Unified for Screen & Print) */}
       <div
         id="invoice-print"
-        className="invoice-print-document print:hidden mx-auto w-full min-w-0 max-w-4xl rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:m-0 print:max-w-none print:w-full print:rounded-none"
+        className="invoice-doc mx-auto w-full max-w-4xl rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50 print:border-none print:shadow-none print:rounded-none print:m-0 print:w-full print:max-w-none"
+        dir="rtl"
       >
-        {/* Status-colored top header border */}
+        {/* Top Gradient Status Bar */}
         <div
           className={`h-2 w-full rounded-t-2xl print:rounded-none bg-gradient-to-r ${
             {
-              PAID: 'from-emerald-400 via-emerald-600 to-teal-700',
-              PARTIALLY_PAID: 'from-amber-300 via-amber-500 to-orange-600',
-              UNPAID: 'from-red-400 via-red-600 to-rose-700',
-              OVERDUE: 'from-rose-500 via-red-600 to-red-800',
-              DRAFT: 'from-slate-300 via-slate-500 to-slate-600',
+              PAID: 'from-emerald-500 via-teal-600 to-emerald-700',
+              PARTIALLY_PAID: 'from-amber-400 via-amber-500 to-orange-500',
+              UNPAID: 'from-red-500 via-rose-600 to-red-700',
+              OVERDUE: 'from-rose-600 via-red-700 to-red-900',
+              DRAFT: 'from-slate-400 via-slate-500 to-slate-600',
               CANCELLED: 'from-slate-300 via-slate-400 to-slate-500',
-            }[data.status] || 'from-slate-950 via-primary-600 to-amber-500'
+            }[data.status] || 'from-slate-900 via-primary-700 to-amber-500'
           }`}
         />
 
-        <div className="min-w-0 p-4 md:p-6 print:p-2 space-y-4 print:space-y-2.5">
-          {/* Header Section: Invoice Details on Right, Studio Brand on Left */}
-          <div className="flex flex-col md:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
-            {/* 1. Document Details (Right in RTL) */}
-            <div className="w-full md:min-w-[220px] rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-start shadow-sm print:bg-white print:border-slate-300 print:p-2">
+        <div className="p-5 sm:p-7 print:p-2 space-y-4 print:space-y-2">
+          {/* Header: Right = Invoice Details, Left = Studio Identity */}
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
+            {/* 1. Document Details (Right) */}
+            <div className="w-full sm:min-w-[240px] sm:max-w-[280px] rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-start print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">فاتورة رسمية</p>
+                <div>
+                  <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">فاتورة ضريبية</h2>
+                  <span className="text-[9px] font-bold text-slate-400" dir="ltr">TAX INVOICE</span>
+                </div>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${getInvoiceStatusColor(
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black ${getInvoiceStatusColor(
                     data.status
                   )}`}
                 >
@@ -450,32 +465,24 @@ export default function InvoiceDetail() {
                 </span>
               </div>
 
-              <div className="space-y-1 text-[11px]">
+              <div className="space-y-1 text-[11px] print:text-[9.5px]">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500">رقم الفاتورة:</span>
-                  <span className="font-mono font-bold text-slate-950" dir="ltr">{data.invoiceNumber}</span>
+                  <span className="font-mono font-black text-slate-950" dir="ltr">{data.invoiceNumber}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500">تاريخ الإصدار:</span>
-                  <span className="font-medium text-slate-800">{formatDate(data.date)}</span>
+                  <span className="font-semibold text-slate-800">{formatDate(data.date)}</span>
                 </div>
                 {data.dueDate && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500">تاريخ الاستحقاق:</span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="font-medium text-slate-800">{formatDate(data.dueDate)}</span>
-                      {(() => {
-                        const days = Math.ceil((new Date(data.dueDate).getTime() - Date.now()) / 86400000);
-                        if (days < 0) return <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-700">متأخرة {Math.abs(days)} يوم</span>;
-                        if (days === 0) return <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">مستحقة اليوم</span>;
-                        return <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">متبقي {days} يوم</span>;
-                      })()}
-                    </span>
+                    <span className="font-semibold text-slate-800">{formatDate(data.dueDate)}</span>
                   </div>
                 )}
                 <div className="mt-1 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-1.5">
-                  <span className="font-bold text-slate-700">الإجمالي:</span>
-                  <span className="font-mono text-sm font-black text-primary-700">{formatCurrency(data.total)}</span>
+                  <span className="font-bold text-slate-700">المبلغ الإجمالي:</span>
+                  <span className="font-mono text-sm font-black text-primary-700 print:text-xs">{formatCurrency(data.total)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-emerald-700">المسدد:</span>
@@ -483,17 +490,23 @@ export default function InvoiceDetail() {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-red-600">المتبقي:</span>
-                  <span className={`font-mono font-bold ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatCurrency(data.remaining)}</span>
+                  <span className={`font-mono font-bold ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {formatCurrency(data.remaining)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* 2. Studio Identity & English Brand (Left in RTL) */}
-            <div className="flex min-w-0 items-start gap-3 text-start" dir="ltr">
-              <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-slate-100 bg-white p-1.5 shadow-sm">
-                <img src={data.studio.logo || `${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="h-11 w-11 object-contain" />
+            {/* 2. Studio Brand & Legal Identity (Left) */}
+            <div className="flex items-start gap-3 text-start" dir="ltr">
+              <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm print:border-slate-300 print:h-11 print:w-11">
+                <img
+                  src={data.studio.logo || `${import.meta.env.BASE_URL}logo.png`}
+                  alt="Logo"
+                  className="h-11 w-11 object-contain print:h-9 print:w-9"
+                />
               </div>
-              <div className="min-w-0 space-y-0.5">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-primary-600">
                     {BRAND_NAME}
@@ -502,129 +515,148 @@ export default function InvoiceDetail() {
                     STUDIO
                   </span>
                 </div>
-                <h1 className="break-words text-xl font-black tracking-tight text-slate-900 leading-tight">
+                <h1 className="text-lg font-black tracking-tight text-slate-900 leading-tight print:text-base">
                   {data.studio.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
-                  {data.studio.crNumber && (
+                {data.studio.crNumber && (
+                  <p className="text-[11px] text-slate-600 print:text-[9.5px]">
+                    <strong className="text-slate-800">السجل التجاري (CR):</strong>{' '}
+                    <span className="font-mono font-bold text-slate-900">{data.studio.crNumber}</span>
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-500 print:text-[8.5px]">
+                  {data.studio.phone && (
                     <span className="inline-flex items-center gap-1">
-                      <strong className="text-slate-700">CR:</strong>
-                      <span className="font-mono">{data.studio.crNumber}</span>
+                      <Phone className="h-3 w-3 text-slate-400" />
+                      <span>{data.studio.phone}</span>
                     </span>
                   )}
-                </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-400">
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-2.5 w-2.5 text-slate-400" />
-                    <span className="break-words">{data.studio.address}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Phone className="h-2.5 w-2.5 text-slate-400" />
-                    <span className="break-all">{data.studio.phone}</span>
-                  </span>
-                  {data.studio.whatsapp && data.studio.whatsapp !== data.studio.phone && (
-                    <a
-                      href={`https://wa.me/${String(data.studio.whatsapp).replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-emerald-600 hover:underline"
-                    >
-                      <MessageCircle className="h-2.5 w-2.5" />
-                      واتساب
-                    </a>
+                  {data.studio.email && (
+                    <span className="inline-flex items-center gap-1">
+                      <Mail className="h-3 w-3 text-slate-400" />
+                      <span>{data.studio.email}</span>
+                    </span>
+                  )}
+                  {data.studio.address && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-slate-400" />
+                      <span>{data.studio.address}</span>
+                    </span>
                   )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Customer, booking & billing details */}
-          <div className={`grid gap-3 grid-cols-1 ${data.booking ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-            {/* Customer Box */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:bg-white print:border-slate-300 print:p-2">
-              <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200/80 pb-1">
+          {/* 3 Information Cards: Billed To | Booking Info | Bank Details */}
+          <div className={`grid gap-3 grid-cols-1 ${data.booking ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+            {/* Card 1: Customer Info */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 print:bg-white print:border-slate-300 print:p-2">
+              <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200 pb-1">
                 <User className="h-3.5 w-3.5 text-primary-600" />
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-700">فاتورة إلى / Billed To</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700">فاتورة إلى · Billed To</h3>
               </div>
-              <div className="space-y-1 text-[11px]">
-                <p className="font-bold text-slate-900">{data.customer.name}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-slate-600">
-                  {data.customer.phone && (
-                    <span className="flex items-center gap-1" dir="ltr">
-                      <Phone className="h-3 w-3 text-slate-400" />
-                      <span>{data.customer.phone}</span>
-                    </span>
-                  )}
-                  {data.customer.email && (
-                    <span className="flex items-center gap-1" dir="ltr">
-                      <Mail className="h-3 w-3 text-slate-400" />
-                      <span>{data.customer.email}</span>
-                    </span>
-                  )}
-                  {data.customer.address && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-slate-400" />
-                      <span>{data.customer.address}</span>
-                    </span>
-                  )}
-                </div>
+              <div className="space-y-0.5 text-[11px] print:text-[9.5px]">
+                <p className="font-bold text-slate-950 text-xs">{data.customer.name}</p>
+                {data.customer.phone && (
+                  <p className="flex items-center gap-1 text-slate-600" dir="ltr">
+                    <Phone className="h-3 w-3 text-slate-400" />
+                    <span>{data.customer.phone}</span>
+                  </p>
+                )}
+                {data.customer.email && (
+                  <p className="flex items-center gap-1 text-slate-600" dir="ltr">
+                    <Mail className="h-3 w-3 text-slate-400" />
+                    <span className="truncate">{data.customer.email}</span>
+                  </p>
+                )}
+                {data.customer.address && (
+                  <p className="flex items-center gap-1 text-slate-600">
+                    <MapPin className="h-3 w-3 text-slate-400" />
+                    <span>{data.customer.address}</span>
+                  </p>
+                )}
               </div>
             </div>
 
+            {/* Card 2: Booking Info (if attached) */}
             {data.booking && (
               <div className="rounded-xl border border-primary-200 bg-primary-50/40 p-3 print:bg-white print:border-slate-300 print:p-2">
                 <div className="flex items-center gap-1.5 mb-1.5 border-b border-primary-100 pb-1">
                   <CalendarDays className="h-3.5 w-3.5 text-primary-600" />
-                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-700">تفاصيل الحجز / Booking Details</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700">تفاصيل الحجز · Booking</h3>
                 </div>
-                <div className="space-y-1 text-[11px] text-slate-600">
-                  <p className="flex items-center justify-between gap-2"><span>رقم الحجز:</span><strong className="font-mono text-primary-700" dir="ltr">{data.booking.number}</strong></p>
-                  <p className="flex items-center justify-between gap-2"><span>نوع الفعالية:</span><strong className="text-slate-800">{getEventTypeLabel(data.booking.eventType)}</strong></p>
-                  {data.booking.eventDate && <p className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" />التاريخ:</span><strong className="text-slate-800">{formatDate(data.booking.eventDate)}</strong></p>}
-                  {(data.booking.startTime || data.booking.endTime) && <p className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />الوقت:</span><strong className="text-slate-800" dir="ltr">{data.booking.startTime ? new Date(data.booking.startTime).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}{data.booking.endTime ? ` - ${new Date(data.booking.endTime).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}` : ''}</strong></p>}
-                  {(data.booking.venueName || data.booking.city) && <p className="flex items-start justify-between gap-2"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />المكان:</span><strong className="max-w-[65%] text-end text-slate-800">{[data.booking.venueName, data.booking.city].filter(Boolean).join(' — ')}</strong></p>}
+                <div className="space-y-0.5 text-[11px] print:text-[9.5px] text-slate-600">
+                  <p className="flex items-center justify-between">
+                    <span>رقم الحجز:</span>
+                    <strong className="font-mono text-primary-700 font-bold" dir="ltr">{data.booking.number}</strong>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span>نوع الفعالية:</span>
+                    <strong className="text-slate-900">{getEventTypeLabel(data.booking.eventType)}</strong>
+                  </p>
+                  {data.booking.eventDate && (
+                    <p className="flex items-center justify-between">
+                      <span>التاريخ:</span>
+                      <strong className="text-slate-800">{formatDate(data.booking.eventDate)}</strong>
+                    </p>
+                  )}
+                  {(data.booking.venueName || data.booking.city) && (
+                    <p className="flex items-start justify-between">
+                      <span>المكان:</span>
+                      <strong className="text-end text-slate-800 max-w-[65%] truncate">
+                        {[data.booking.venueName, data.booking.city].filter(Boolean).join(' - ')}
+                      </strong>
+                    </p>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Studio Payment & Bank Details */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:bg-white print:border-slate-300 print:p-2">
-              <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200/80 pb-1">
+            {/* Card 3: Bank Transfer Details */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 print:bg-white print:border-slate-300 print:p-2">
+              <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200 pb-1">
                 <Building2 className="h-3.5 w-3.5 text-primary-600" />
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-700">بيانات التحويل البنكي / Bank Details</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700">بيانات التحويل · Bank</h3>
               </div>
-              <div className="space-y-0.5 text-[11px] text-slate-600">
+              <div className="space-y-0.5 text-[11px] print:text-[9.5px] text-slate-600">
                 <p className="flex items-center justify-between">
-                  <span className="text-slate-500">البنك:</span>
-                  <strong className="text-slate-800">{data.studio.bankName}</strong>
+                  <span className="text-slate-500">اسم البنك:</span>
+                  <strong className="text-slate-900">{data.studio.bankName}</strong>
                 </p>
                 <p className="flex items-center justify-between">
-                  <span className="text-slate-500">الآيبان IBAN:</span>
-                  <strong className="max-w-[65%] break-all text-end font-mono text-slate-900" dir="ltr">{data.studio.iban}</strong>
+                  <span className="text-slate-500">اسم الحساب:</span>
+                  <strong className="text-slate-800 truncate max-w-[65%]">{data.studio.accountName}</strong>
                 </p>
+                <div className="pt-0.5">
+                  <span className="block text-[10px] text-slate-500">رقم الآيبان (IBAN):</span>
+                  <strong className="block font-mono text-xs font-bold text-slate-950 break-all" dir="ltr">
+                    {data.studio.iban}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Itemized Table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:block print:border-slate-300 print:overflow-hidden md:block">
-            <table className="w-full min-w-[540px] text-start text-[11px] md:min-w-0">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:shadow-none print:border-slate-300">
+            <table className="w-full text-start text-[11px] print:text-[9.5px]">
               <thead>
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
                   <th className="w-8 px-3 py-2 text-start font-bold uppercase">#</th>
                   <th className="px-3 py-2 text-start font-bold uppercase">الخدمة / البند (Description)</th>
                   <th className="w-16 px-3 py-2 text-center font-bold uppercase">الكمية</th>
                   <th className="w-28 px-3 py-2 text-end font-bold uppercase">سعر الوحدة</th>
-                  {data.discount > 0 && <th className="w-20 px-3 py-2 text-end font-bold uppercase">الخصم</th>}
+                  {data.discount > 0 && <th className="w-24 px-3 py-2 text-end font-bold uppercase">الخصم</th>}
                   <th className="w-28 px-3 py-2 text-end font-bold uppercase">المجموع</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {data.items?.length > 0 ? (
                   data.items.map((item, idx) => (
-                    <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/60' : 'bg-white'}>
+                    <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
                       <td className="px-3 py-2 font-mono text-slate-400">{idx + 1}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-800" dir="auto">{item.description}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-900" dir="auto">{item.description}</td>
                       <td className="px-3 py-2 text-center font-mono font-medium text-slate-700">{item.quantity}</td>
                       <td className="px-3 py-2 text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</td>
                       {data.discount > 0 && (
@@ -632,200 +664,175 @@ export default function InvoiceDetail() {
                           {item.discount ? `- ${formatCurrency(item.discount)}` : '—'}
                         </td>
                       )}
-                      <td className="px-3 py-2 text-end font-mono font-bold text-slate-900">{formatCurrency(item.total)}</td>
+                      <td className="px-3 py-2 text-end font-mono font-bold text-slate-950">{formatCurrency(item.total)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-slate-400">لا توجد بنود مسجلة</td>
+                    <td colSpan={data.discount > 0 ? 6 : 5} className="py-4 text-center text-slate-400">
+                      لا توجد بنود مسجلة
+                    </td>
                   </tr>
                 )}
               </tbody>
+              <tfoot className="border-t-2 border-slate-200 bg-slate-50/90 font-semibold print:bg-white">
+                <tr>
+                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-1.5 text-end text-slate-600">
+                    المجموع الفرعي:
+                  </td>
+                  <td className="px-3 py-1.5 text-end font-mono font-bold text-slate-900">
+                    {formatCurrency(data.subtotal)}
+                  </td>
+                </tr>
+                {data.discount > 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-1.5 text-end text-emerald-700">
+                      الخصم المطبق:
+                    </td>
+                    <td className="px-3 py-1.5 text-end font-mono font-bold text-emerald-700">
+                      - {formatCurrency(data.discount)}
+                    </td>
+                  </tr>
+                )}
+                <tr className="bg-slate-950 text-white print:bg-slate-900">
+                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-2 text-end font-black text-amber-400 text-xs">
+                    الإجمالي المستحق:
+                  </td>
+                  <td className="px-3 py-2 text-end font-mono text-base font-black text-white print:text-xs">
+                    {formatCurrency(data.total)}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
-          <div className="space-y-2 md:hidden">
-            {data.items?.length > 0 ? (
-              data.items.map((item, idx) => (
-                <div key={item.id || idx} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">البند {idx + 1}</p>
-                      <p className="break-words text-[12px] font-semibold leading-5 text-slate-800" dir="auto">{item.description}</p>
-                    </div>
-                    <span className="shrink-0 text-end font-mono text-[12px] font-bold text-slate-900">{formatCurrency(item.total)}</span>
-                  </div>
-                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-slate-100 pt-2 text-[10px]">
-                    <span className="text-slate-500">الكمية</span>
-                    <span className="text-end font-mono font-medium text-slate-700">{item.quantity}</span>
-                    <span className="text-slate-500">سعر الوحدة</span>
-                    <span className="text-end font-mono text-slate-600">{formatCurrency(item.unitPrice)}</span>
-                    {data.discount > 0 && (
-                      <>
-                        <span className="text-slate-500">الخصم</span>
-                        <span className="text-end font-mono text-emerald-600">{item.discount ? `- ${formatCurrency(item.discount)}` : '—'}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-xl border border-slate-200 py-4 text-center text-[11px] text-slate-400">لا توجد بنود مسجلة</div>
-            )}
-          </div>
-
-          {/* Totals & Payments Section with Visual Progress Bar */}
-          <div className="grid gap-3 grid-cols-1 md:grid-cols-12 items-start">
-            {/* Left side: Payments + QR Badge */}
-            <div className="md:col-span-7 space-y-2.5">
-              {data.payments?.length > 0 && (
-                <div id="invoice-payment-history" className="rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 print:bg-white print:border-slate-300">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-700">سجل الدفعات المسددة</h4>
-                  </div>
-                  <div className="space-y-1">
-                    {data.payments.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex flex-wrap items-center justify-between gap-y-1 rounded-lg border border-emerald-100 bg-emerald-50/70 px-2.5 py-1 text-[11px]"
-                      >
-                        <div className="flex min-w-0 flex-1 items-start gap-1.5">
-                          <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" />
-                          <div className="min-w-0">
-                            <span className="break-words font-semibold text-slate-800">
-                              {getPaymentMethodLabel(p.method)}
-                              {p.reference !== '-' && <span className="font-mono text-slate-500"> ({p.reference})</span>}
-                            </span>
-                            <span className="text-[10px] text-slate-400 me-2 ms-2">| {formatDate(p.date)}</span>
-                          </div>
-                        </div>
-                        <span className="shrink-0 font-mono font-bold text-emerald-700">{formatCurrency(p.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Electronic Verification Badge: real scannable QR + verify code */}
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-2.5 bg-white print:border-slate-300">
-                <div className="invoice-qr-box shrink-0 rounded-lg border border-slate-200 bg-white p-1.5">
-                  <QRCodeSVG
-                    value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
-                    size={62}
-                    bgColor="#ffffff"
-                    fgColor="#0f172a"
-                    level="M"
-                  />
-                </div>
-                <div className="min-w-0 space-y-0.5 text-[10px] text-slate-500">
-                  <p className="font-bold text-slate-800 flex items-center gap-1 text-[11px]">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                    فاتورة إلكترونية معتمدة
-                  </p>
-                  <p className="leading-tight text-slate-500">
-                    امسح الرمز للتحقق من بيانات الفاتورة إلكترونياً.
-                  </p>
-                  <span className="invoice-verify-chip" dir="ltr">
-                    ✓ {data.invoiceNumber}
-                  </span>
-                  <div className="invoice-actions pt-1">
-                    <button type="button" onClick={handleDownloadPdf} disabled={pdfBusy} className="btn-download">
-                      <Download className="h-3.5 w-3.5" />
-                      {pdfBusy ? 'جارٍ التحميل...' : 'تحميل PDF'}
-                    </button>
-                    <button type="button" onClick={handlePrint} className="btn-print">
-                      <Printer className="h-3.5 w-3.5" />
-                      طباعة
-                    </button>
-                  </div>
-                </div>
+          {/* Payment History (Web View Only) */}
+          {data.payments?.length > 0 && (
+            <div id="invoice-payment-history" className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:hidden">
+              <div className="flex items-center gap-1.5 mb-2">
+                <CreditCard className="h-4 w-4 text-emerald-600" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">سجل الدفعات المسددة</h4>
               </div>
-            </div>
-
-            {/* Right side: Financial Breakdown Card + Payment Progress Bar */}
-            <div className="min-w-0 md:col-span-5 rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2 print:bg-white print:border-slate-300">
-              <div className="flex items-center justify-between text-[11px] text-slate-600">
-                <span>المجموع الفرعي:</span>
-                <span className="font-mono font-medium text-slate-800">{formatCurrency(data.subtotal)}</span>
-              </div>
-
-              {data.discount > 0 && (
-                <div className="flex items-center justify-between text-[11px] text-slate-600">
-                  <span>الخصم المطبق:</span>
-                  <span className="font-mono font-semibold text-emerald-600">- {formatCurrency(data.discount)}</span>
-                </div>
-              )}
-
-              <div className="border-t border-slate-200 pt-1.5">
-                <div className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-2 text-white">
-                  <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                      الإجمالي
-                    </span>
-                  </div>
-                  <span className="font-mono text-base font-black text-white">{formatCurrency(data.total)}</span>
-                </div>
-              </div>
-
-              <div className="invoice-amount-words">
-                <span className="text-slate-400 font-bold">المبلغ كتابةً:</span>{' '}
-                {amountToArabicWords(data.total, data.studio.currency)}
-              </div>
-
-              {/* Visual Payment Progress Bar */}
-              <div className="rounded-lg bg-white p-2 border border-slate-200/80 space-y-1.5 print:hidden">
-                <div className="flex items-center justify-between text-[10px] font-bold">
-                  <span className="text-slate-600">نسبة السداد المسجلة</span>
-                  <span className={paidPercent >= 100 ? 'text-emerald-600' : 'text-primary-700'}>
-                    {paidPercent}% {paidPercent >= 100 ? '(مسددة بالكامل)' : ''}
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="space-y-1.5">
+                {data.payments.map((p) => (
                   <div
-                    className={`h-full transition-all duration-500 rounded-full ${
-                      paidPercent >= 100 ? 'bg-emerald-500' : paidPercent > 0 ? 'bg-primary-500' : 'bg-slate-300'
-                    }`}
-                    style={{ width: `${paidPercent}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1 pt-0.5 text-[11px]">
-                <div className="flex items-center justify-between text-emerald-700">
-                  <span className="font-medium">المسدد:</span>
-                  <span className="font-mono font-bold">{formatCurrency(data.paid)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-slate-700">المتبقي:</span>
-                  <span
-                    className={`font-mono font-bold ${
-                      data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'
-                    }`}
+                    key={p.id}
+                    className="flex flex-wrap items-center justify-between gap-y-1 rounded-lg border border-emerald-100 bg-emerald-50/80 px-3 py-1.5 text-xs"
                   >
-                    {formatCurrency(data.remaining)}
-                  </span>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      <span className="font-semibold text-slate-800">{getPaymentMethodLabel(p.method)}</span>
+                      {p.reference !== '-' && <span className="font-mono text-slate-500">({p.reference})</span>}
+                      <span className="text-slate-400">| {formatDate(p.date)}</span>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-700">{formatCurrency(p.amount)}</span>
+                  </div>
+                ))}
               </div>
+            </div>
+          )}
+
+          {/* Payment Progress & Settle Strip (Web Only) */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 print:hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-700">نسبة السداد:</span>
+                <span className={`font-mono font-bold ${paidPercent >= 100 ? 'text-emerald-700' : 'text-primary-700'}`}>
+                  {paidPercent}% {paidPercent >= 100 ? '(مسددة بالكامل)' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-emerald-700 font-bold">المسدد: <strong className="font-mono">{formatCurrency(data.paid)}</strong></span>
+                <span className="text-slate-300">|</span>
+                <span className="text-red-600 font-bold">المتبقي: <strong className="font-mono">{formatCurrency(data.remaining)}</strong></span>
+              </div>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div
+                className={`h-full transition-all duration-500 rounded-full ${
+                  paidPercent >= 100 ? 'bg-emerald-500' : 'bg-primary-600'
+                }`}
+                style={{ width: `${paidPercent}%` }}
+              />
             </div>
           </div>
 
-          {/* Terms & Notes Section if any */}
+          {/* Settle Summary for Print (Clean Summary Row) */}
+          <div className="hidden print:flex items-center justify-between rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-[10px]">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-emerald-800">المبلغ المسدد: {formatCurrency(data.paid)}</span>
+              <span className="text-slate-400">|</span>
+              <span className="font-bold text-red-700">المبلغ المتبقي: {formatCurrency(data.remaining)}</span>
+            </div>
+            <span className="font-bold text-slate-600">
+              {paidPercent >= 100 ? '✓ مسددة بالكامل' : `متبقي ${100 - paidPercent}% للسداد`}
+            </span>
+          </div>
+
+          {/* Amount In Words (Tafqeet) */}
+          <div className="invoice-amount-words">
+            <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
+            <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
+          </div>
+
+          {/* Terms / Notes if available */}
           {data.notes && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-2.5 text-[11px]">
-              <h4 className="font-bold text-slate-700 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
+            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2.5 text-[11px] print:text-[9px]">
+              <h4 className="font-bold text-slate-800 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
               <p className="text-slate-600" dir="auto">{data.notes}</p>
             </div>
           )}
 
+          {/* Verification Badge + Signatures */}
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-12 items-center pt-2">
+            {/* Verification QR Box */}
+            <div className="sm:col-span-6 flex items-center gap-3 rounded-xl border border-slate-200 p-2 bg-white print:border-slate-300">
+              <div className="shrink-0 rounded-lg border border-slate-200 p-1 bg-white">
+                <QRCodeSVG
+                  value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
+                  size={54}
+                  bgColor="#ffffff"
+                  fgColor="#0f172a"
+                  level="M"
+                />
+              </div>
+              <div className="min-w-0 space-y-0.5 text-[10px] print:text-[8.5px] text-slate-500">
+                <p className="font-bold text-slate-900 flex items-center gap-1 text-[11px] print:text-[9.5px]">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                  فاتورة إلكترونية معتمدة
+                </p>
+                <p className="leading-tight text-slate-500">امسح الرمز للتحقق من صحة الفاتورة.</p>
+                <span className="invoice-verify-chip" dir="ltr">
+                  ✓ {data.invoiceNumber}
+                </span>
+              </div>
+            </div>
+
+            {/* Official Signatures */}
+            <div className="sm:col-span-6 flex gap-4 text-center">
+              <div className="flex-1 rounded-xl border border-dashed border-slate-300 p-2.5 bg-slate-50/40 print:bg-white">
+                <div className="h-7" />
+                <div className="border-t border-slate-300 pt-1 text-[9.5px] font-bold text-slate-700">
+                  توقيع المستلم · Customer
+                </div>
+              </div>
+              <div className="flex-1 rounded-xl border border-dashed border-slate-300 p-2.5 bg-slate-50/40 print:bg-white">
+                <div className="h-7" />
+                <div className="border-t border-slate-300 pt-1 text-[9.5px] font-bold text-slate-700">
+                  ختم واعتماد الاستوديو · Stamp
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Official Footer */}
-          <div className="border-t border-slate-200 pt-3 space-y-3 print:pt-2 print:space-y-2">
-            <p className="text-center text-[12px] font-bold text-primary-700 print:text-[9px]">
-              شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم
+          <div className="border-t border-slate-200 pt-2.5 space-y-1.5 print:pt-1">
+            <p className="text-center text-[11px] font-bold text-primary-700 print:text-[8.5px]">
+              شكراً لثقتكم بنا — نتطلع دائماً لخدمتكم بأعلى معايير الجودة
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400 print:text-[8px]">
-              <p className="min-w-0 break-words">© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
-              <p className="flex min-w-0 max-w-full items-center gap-1 break-all font-mono">
+              <p>© {new Date().getFullYear()} {data.studio.name}. جميع الحقوق محفوظة.</p>
+              <p className="flex items-center gap-1 font-mono">
                 <FileCheck className="h-3 w-3 shrink-0 text-slate-400" />
                 <span>Doc Ref: {data.id}</span>
               </p>
@@ -834,187 +841,9 @@ export default function InvoiceDetail() {
         </div>
       </div>
 
-      {/* Print-only invoice document — "boutique sidebar" A4 layout */}
-      <div id="invoice-print-doc" className="hidden print:block">
-        <div className="ip-sheet" dir="rtl">
-          {/* ── Dark navy sidebar ─────────────────────────────── */}
-          <aside className="ip-side">
-            <div className="ip-side-top">
-              {data.studio.logo ? (
-                <img src={data.studio.logo} alt="Logo" className="ip-side-logo" />
-              ) : (
-                <div className="ip-side-monogram">{data.studio.name?.trim().charAt(0) || 'S'}</div>
-              )}
-              <div className="ip-side-brand">
-                <span className="ip-side-kicker" dir="ltr">{BRAND_NAME} · STUDIO</span>
-                <h1 className="ip-side-name">{data.studio.name}</h1>
-              </div>
-            </div>
-
-            <div className={`ip-side-badge ip-badge-${data.status.toLowerCase()}`}>
-              {isPaid && <CheckCircle2 className="ip-badge-icon" />}
-              <span>{getInvoiceStatusLabel(data.status)}</span>
-            </div>
-
-            <div className="ip-side-block">
-              <span className="ip-side-label">فاتورة رقم · INVOICE No.</span>
-              <span className="ip-side-value" dir="ltr">{data.invoiceNumber}</span>
-            </div>
-
-            <div className="ip-side-grid">
-              <div>
-                <span className="ip-side-label">تاريخ الإصدار</span>
-                <span className="ip-side-sub">{formatDate(data.date)}</span>
-              </div>
-              {data.dueDate && (
-                <div>
-                  <span className="ip-side-label">الاستحقاق</span>
-                  <span className="ip-side-sub">{formatDate(data.dueDate)}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="ip-side-due">
-              <span className="ip-side-label">المبلغ المتبقي</span>
-              <span className="ip-side-amount">{formatCurrency(data.remaining)}</span>
-              <span className="ip-side-paidline">
-                المسدد {formatCurrency(data.paid)} من {formatCurrency(data.total)}
-              </span>
-            </div>
-
-            <div className="ip-side-qr">
-              <div className="ip-side-qr-box">
-                <QRCodeSVG
-                  value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
-                  size={52}
-                  bgColor="#ffffff"
-                  fgColor="#0d1b2f"
-                  level="M"
-                />
-              </div>
-              <p>امسح الرمز للتحقق<br />فاتورة إلكترونية معتمدة</p>
-            </div>
-
-            <div className="ip-side-foot">
-              {data.studio.crNumber && <p dir="ltr">CR {data.studio.crNumber}</p>}
-              <p dir="ltr">{data.studio.phone}</p>
-              <p>{data.studio.address}</p>
-            </div>
-          </aside>
-
-          {/* ── Main column ───────────────────────────────────── */}
-          <main className="ip-main">
-            <header className="ip-main-head">
-              <div>
-                <h2 className="ip-main-title">فاتورة ضريبية رسمية</h2>
-                <span className="ip-main-sub" dir="ltr">TAX INVOICE</span>
-              </div>
-              <span className="ip-main-ref" dir="ltr">{data.invoiceNumber}</span>
-            </header>
-
-            <section className="ip-cards">
-              <div className="ip-card">
-                <h3>فاتورة إلى · Billed To</h3>
-                <p className="ip-card-name">{data.customer.name}</p>
-                {data.customer.phone && <p dir="ltr">{data.customer.phone}</p>}
-                {data.customer.email && <p dir="ltr">{data.customer.email}</p>}
-                {data.customer.address && <p>{data.customer.address}</p>}
-              </div>
-
-              {data.booking && (
-                <div className="ip-card">
-                  <h3>تفاصيل الحجز · Booking</h3>
-                  <div className="ip-line"><span>رقم الحجز</span><strong dir="ltr">{data.booking.number}</strong></div>
-                  <div className="ip-line"><span>نوع الفعالية</span><strong>{getEventTypeLabel(data.booking.eventType)}</strong></div>
-                  {data.booking.eventDate && <div className="ip-line"><span>التاريخ</span><strong>{formatDate(data.booking.eventDate)}</strong></div>}
-                  {(data.booking.venueName || data.booking.city) && (
-                    <div className="ip-line"><span>المكان</span><strong>{[data.booking.venueName, data.booking.city].filter(Boolean).join(' — ')}</strong></div>
-                  )}
-                </div>
-              )}
-
-              <div className="ip-card">
-                <h3>بيانات التحويل · Bank</h3>
-                <div className="ip-line"><span>البنك</span><strong>{data.studio.bankName}</strong></div>
-                <div className="ip-line"><span>الآيبان</span><strong dir="ltr">{data.studio.iban}</strong></div>
-              </div>
-            </section>
-
-            <table className="ip-table">
-              <thead>
-                <tr>
-                  <th className="ip-col-num">#</th>
-                  <th>الخدمة / البند</th>
-                  <th className="ip-col-num">الكمية</th>
-                  <th className="ip-col-amount">سعر الوحدة</th>
-                  {data.discount > 0 && <th className="ip-col-amount">الخصم</th>}
-                  <th className="ip-col-amount">المجموع</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items?.map((item, idx) => (
-                  <tr key={item.id || idx}>
-                    <td className="ip-col-num">{idx + 1}</td>
-                    <td>{item.description}</td>
-                    <td className="ip-col-num">{item.quantity}</td>
-                    <td className="ip-col-amount">{formatCurrency(item.unitPrice)}</td>
-                    {data.discount > 0 && (
-                      <td className="ip-col-amount">{item.discount ? `- ${formatCurrency(item.discount)}` : '—'}</td>
-                    )}
-                    <td className="ip-col-amount ip-bold">{formatCurrency(item.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={data.discount > 0 ? 5 : 4} className="ip-foot-label">المجموع الفرعي</td>
-                  <td className="ip-col-amount">{formatCurrency(data.subtotal)}</td>
-                </tr>
-                {data.discount > 0 && (
-                  <tr>
-                    <td colSpan={5} className="ip-foot-label">الخصم المطبق</td>
-                    <td className="ip-col-amount ip-foot-discount">- {formatCurrency(data.discount)}</td>
-                  </tr>
-                )}
-                <tr className="ip-foot-grand">
-                  <td colSpan={data.discount > 0 ? 5 : 4}>الإجمالي المستحق</td>
-                  <td className="ip-col-amount">{formatCurrency(data.total)}</td>
-                </tr>
-              </tfoot>
-            </table>
-
-            <div className="ip-words">
-              <span>المبلغ كتابةً:</span> {amountToArabicWords(data.total, data.studio.currency)}
-            </div>
-
-            {data.notes && (
-              <div className="ip-notes">
-                <strong>الشروط والأحكام / ملاحظات:</strong> <span dir="auto">{data.notes}</span>
-              </div>
-            )}
-
-            <div className="ip-signatures">
-              <div className="ip-sign-box">
-                <span className="ip-sign-line" />
-                <p>توقيع المستلم · Customer Signature</p>
-              </div>
-              <div className="ip-sign-box">
-                <span className="ip-sign-line" />
-                <p>ختم واعتماد الاستوديو · Authorized Stamp</p>
-              </div>
-            </div>
-
-            <footer className="ip-main-foot">
-              <span>© {new Date().getFullYear()} {data.studio.name} · شكراً لثقتكم بنا</span>
-              <span className="ip-doc-ref" dir="ltr">Doc Ref: {data.id}</span>
-            </footer>
-          </main>
-        </div>
-      </div>
-
       {/* Record Quick Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in print:hidden">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -1052,7 +881,7 @@ export default function InvoiceDetail() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">طريقة الدفع</label>
                   <select
