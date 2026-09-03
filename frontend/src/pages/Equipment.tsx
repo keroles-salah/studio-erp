@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Package, AlertCircle, Wrench, CalendarDays, Plus, X } from 'lucide-react';
+import { Search, Package, AlertCircle, Plus, X, Edit2 } from 'lucide-react';
 import api from '../lib/api';
-import { formatCurrency, formatDate, getEquipmentStatusColor, getEquipmentStatusLabel, getEventTypeLabel, todayLocalDate } from '../lib/utils';
+import { formatCurrency, todayLocalDate } from '../lib/utils';
 import { LARGE_PAGE_SIZE } from '../lib/constants';
 
 interface Equipment {
@@ -34,7 +34,6 @@ interface EquipmentStats {
 }
 
 const CATEGORIES = ['كاميرات', 'عدسات', 'إضاءة', 'درونات', 'سماعات', 'حوامل ثلاثية', 'ميكروفونات', 'خلاطات صوت', 'مثبتات'];
-const STATUSES = ['AVAILABLE', 'RESERVED', 'IN_USE', 'MAINTENANCE', 'LOST', 'DAMAGED', 'UNAVAILABLE'];
 
 export default function Equipment() {
   const { t } = useTranslation();
@@ -43,19 +42,37 @@ export default function Equipment() {
   const [status, setStatus] = useState('');
   const [view, setView] = useState<'grid' | 'table'>('grid');
   const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<Equipment | null>(null);
   const [form, setForm] = useState({
     equipmentCode: '', name: '', category: 'كاميرات', brand: '', model: '',
     serialNumber: '', ownershipType: 'OWNED', purchasePrice: '', rentalPrice: '',
     status: 'AVAILABLE', location: '', notes: '', quantity: '1',
   });
+  const [editForm, setEditForm] = useState({
+    name: '', category: 'كاميرات', ownershipType: 'OWNED', rentalPrice: '',
+    status: 'AVAILABLE', location: '', quantity: '1',
+  });
   const [submitError, setSubmitError] = useState('');
   const queryClient = useQueryClient();
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const setE = (k: string, v: string) => setEditForm((f) => ({ ...f, [k]: v }));
+
+  const openEdit = (e: Equipment) => {
+    setEditingItem(e);
+    setEditForm({
+      name: e.name || '',
+      category: e.category || 'كاميرات',
+      ownershipType: e.ownershipType || 'OWNED',
+      rentalPrice: e.rentalPrice != null ? String(e.rentalPrice) : '',
+      status: e.status || 'AVAILABLE',
+      location: e.location || '',
+      quantity: String(e.quantity || 1),
+    });
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      // الكمية تُسجَّل كحقل واحد على الصنف — بدون توليد سجلات مكررة بأكواد متسلسلة
       const qty = Math.min(999, Math.max(1, parseInt(form.quantity, 10) || 1));
       const payload: Record<string, unknown> = {
         equipmentCode: form.equipmentCode.trim(),
@@ -72,13 +89,8 @@ export default function Equipment() {
         location: form.location.trim() || null,
         notes: form.notes.trim() || null,
       };
-      try {
-        const res = await api.post('/equipment', payload);
-        return res.data;
-      } catch (err: any) {
-        const msg = err?.response?.data?.message || err?.response?.data?.error || 'خطأ غير معروف';
-        throw new Error(msg, { cause: err });
-      }
+      const res = await api.post('/equipment', payload);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
@@ -92,9 +104,33 @@ export default function Equipment() {
       });
     },
     onError: (err: any) => {
+      setSubmitError(err?.response?.data?.message || err?.response?.data?.error || 'حدث خطأ أثناء الحفظ');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingItem) return;
+      const qty = Math.min(999, Math.max(1, parseInt(editForm.quantity, 10) || 1));
+      const payload = {
+        name: editForm.name.trim(),
+        category: editForm.category,
+        quantity: qty,
+        ownershipType: editForm.ownershipType,
+        rentalPrice: editForm.rentalPrice === '' ? null : parseFloat(editForm.rentalPrice),
+        status: editForm.status,
+        location: editForm.location.trim() || null,
+      };
+      const res = await api.put(`/equipment/${editingItem.id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-stats'] });
-      setSubmitError(err?.message || err?.response?.data?.message || err?.response?.data?.error || 'حدث خطأ أثناء الحفظ');
+      setEditingItem(null);
+    },
+    onError: (err: any) => {
+      setSubmitError(err?.response?.data?.message || err?.response?.data?.error || 'حدث خطأ أثناء التعديل');
     },
   });
 
@@ -106,6 +142,16 @@ export default function Equipment() {
     }
     setSubmitError('');
     createMutation.mutate();
+  };
+
+  const submitEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.name.trim()) {
+      setSubmitError('الاسم مطلوب');
+      return;
+    }
+    setSubmitError('');
+    updateMutation.mutate();
   };
 
   const { data: equipment, isLoading } = useQuery<Equipment[]>({
@@ -128,14 +174,7 @@ export default function Equipment() {
     },
   });
 
-  const currentBooking = (e: Equipment) => e.bookings?.[0]?.booking ?? null;
-
   const ownershipLabel = (o: string) => (o === 'RENTED' ? 'مستأجرة' : 'مملوكة');
-  const today = todayLocalDate();
-  const isBookingToday = (e: Equipment) => e.bookings?.some(b => b.booking.event?.eventDate?.slice(0, 10) === today) ?? false;
-
-
-  const statOf = (s: string) => stats?.byStatus.find((x) => x.status === s)?.count ?? 0;
 
   const sumUnits = (list: Equipment[] | undefined) =>
     (list ?? []).reduce((sum, e) => sum + Math.max(0, Number(e.quantity) || 0), 0);
@@ -192,21 +231,32 @@ export default function Equipment() {
           {equipment.map((e) => {
             const units = e.quantity ?? 1;
             return (
-              <div key={e.id} className="card hover:shadow-md transition-shadow flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                    <Package className="w-5 h-5 text-slate-500" />
+              <div key={e.id} className="card hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                      <Package className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
+                      عدد {units}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary-700">
-                    عدد {units}
-                  </span>
+                  <h3 className="font-semibold text-slate-900 mb-1">{e.name}</h3>
+                  <p className="text-xs text-slate-400 mb-3 font-mono">{e.equipmentCode}</p>
+                  <div className="space-y-1 text-sm text-slate-500">
+                    <div className="flex justify-between"><span>سعر الإيجار:</span><span className="font-medium text-primary-700">{e.rentalPrice != null ? formatCurrency(Number(e.rentalPrice)) : '—'}</span></div>
+                    <div className="flex justify-between"><span>الملكية:</span><span className="text-slate-700">{ownershipLabel(e.ownershipType)}</span></div>
+                    <div className="flex justify-between"><span>الموقع:</span><span className="text-slate-700">{e.location || '—'}</span></div>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-1">{e.name}</h3>
-                <p className="text-xs text-slate-400 mb-3 font-mono">{e.equipmentCode}</p>
-                <div className="space-y-1 text-sm text-slate-500 flex-1">
-                  <div className="flex justify-between"><span>سعر الإيجار:</span><span className="font-medium text-primary-700">{e.rentalPrice != null ? formatCurrency(Number(e.rentalPrice)) : '—'}</span></div>
-                  <div className="flex justify-between"><span>الملكية:</span><span className="text-slate-700">{ownershipLabel(e.ownershipType)}</span></div>
-                  <div className="flex justify-between"><span>الموقع:</span><span className="text-slate-700">{e.location || '—'}</span></div>
+                <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(e)}
+                    className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1 text-slate-600 hover:text-primary-700"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> تعديل العدد والبيانات
+                  </button>
                 </div>
               </div>
             );
@@ -220,38 +270,49 @@ export default function Equipment() {
                 <tr>
                   <th className="px-4 py-3 text-start font-medium">الكود</th>
                   <th className="px-4 py-3 text-start font-medium">الاسم</th>
-                  <th className="px-4 py-3 text-center font-medium">العدد</th>
+                  <th className="px-4 py-3 text-center font-medium">العدد المتوفر</th>
                   <th className="px-4 py-3 text-start font-medium">سعر الإيجار</th>
                   <th className="px-4 py-3 text-start font-medium">الملكية</th>
                   <th className="px-4 py-3 text-start font-medium">الموقع</th>
+                  <th className="px-4 py-3 text-center font-medium">إجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {equipment.map((e) => (
-                    <tr key={e.id} className="table-row-hover">
-                      <td className="px-4 py-3 font-mono text-slate-500">{e.equipmentCode}</td>
-                      <td className="px-4 py-3 font-medium text-slate-900">{e.name}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
-                          {e.quantity ?? 1}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-primary-700">{e.rentalPrice != null ? formatCurrency(Number(e.rentalPrice)) : '—'}</td>
-                      <td className="px-4 py-3 text-slate-600">{ownershipLabel(e.ownershipType)}</td>
-                      <td className="px-4 py-3 text-slate-600">{e.location || '—'}</td>
-                    </tr>
-                  ))}
+                  <tr key={e.id} className="table-row-hover">
+                    <td className="px-4 py-3 font-mono text-slate-500">{e.equipmentCode}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{e.name}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">
+                        {e.quantity ?? 1}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium text-primary-700">{e.rentalPrice != null ? formatCurrency(Number(e.rentalPrice)) : '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">{ownershipLabel(e.ownershipType)}</td>
+                    <td className="px-4 py-3 text-slate-600">{e.location || '—'}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(e)}
+                        className="btn-secondary text-xs px-2.5 py-1 inline-flex items-center gap-1"
+                      >
+                        <Edit2 className="w-3 h-3" /> تعديل
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
+      {/* Add Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowModal(false)}>
           <div className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900">إضافة معدة جديدة</h2>
+              <h2 className="text-lg font-bold text-slate-900">إضافة معدة جديدة (صنف واحد بالعدد)</h2>
               <button type="button" onClick={() => setShowModal(false)} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -268,13 +329,19 @@ export default function Equipment() {
                   <input value={form.equipmentCode} onChange={(e) => set('equipmentCode', e.target.value)} className="input" placeholder="مثال: CAM-005" required />
                 </div>
                 <div>
-                  <label className="label">الكمية المتوفرة</label>
-                  <input type="number" min="1" max="999" value={form.quantity} onChange={(e) => set('quantity', e.target.value)} className="input" />
+                  <label className="label">العدد / الكمية المتوفرة *</label>
+                  <input type="number" min="1" max="999" value={form.quantity} onChange={(e) => set('quantity', e.target.value)} className="input font-bold" required />
                   <p className="text-xs text-slate-400 mt-1">تُسجَّل كصنف واحد بهذه الكمية — بدون تكرار أو أكواد متسلسلة</p>
                 </div>
                 <div>
-                  <label className="label">الاسم *</label>
+                  <label className="label">اسم المعدة *</label>
                   <input value={form.name} onChange={(e) => set('name', e.target.value)} className="input" placeholder="مثال: كاميرا Sony A7 IV" required />
+                </div>
+                <div>
+                  <label className="label">التصنيف</label>
+                  <select value={form.category} onChange={(e) => set('category', e.target.value)} className="input">
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="label">نوع الملكية</label>
@@ -286,14 +353,6 @@ export default function Equipment() {
                 <div>
                   <label className="label">سعر الإيجار (ر.س)</label>
                   <input type="number" min="0" step="0.01" value={form.rentalPrice} onChange={(e) => set('rentalPrice', e.target.value)} className="input" placeholder="0.00" />
-                </div>
-                <div>
-                  <label className="label">سعر الشراء (ر.س)</label>
-                  <input type="number" min="0" step="0.01" value={form.purchasePrice} onChange={(e) => set('purchasePrice', e.target.value)} className="input" placeholder="0.00" />
-                </div>
-                <div>
-                  <label className="label">الرقم التسلسلي (اختياري)</label>
-                  <input value={form.serialNumber} onChange={(e) => set('serialNumber', e.target.value)} className="input" placeholder="S/N..." />
                 </div>
                 <div>
                   <label className="label">الموقع</label>
@@ -315,6 +374,57 @@ export default function Equipment() {
           </div>
         </div>
       )}
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setEditingItem(null)}>
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">تعديل المعدة والعدد</h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">{editingItem.equipmentCode}</p>
+              </div>
+              <button type="button" onClick={() => setEditingItem(null)} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {submitError && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">{submitError}</div>
+            )}
+
+            <form onSubmit={submitEdit} className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="label">الاسم</label>
+                  <input value={editForm.name} onChange={(e) => setE('name', e.target.value)} className="input" required />
+                </div>
+                <div>
+                  <label className="label">العدد المتوفر في المخزون (Quantity)</label>
+                  <input type="number" min="1" max="999" value={editForm.quantity} onChange={(e) => setE('quantity', e.target.value)} className="input font-bold text-primary-700" required />
+                  <p className="text-xs text-slate-500 mt-1">تعديل إجمالي عدد القطع المتوفرة من هذه المعدة</p>
+                </div>
+                <div>
+                  <label className="label">سعر الإيجار (ر.س)</label>
+                  <input type="number" min="0" step="0.01" value={editForm.rentalPrice} onChange={(e) => setE('rentalPrice', e.target.value)} className="input" placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="label">الموقع</label>
+                  <input value={editForm.location} onChange={(e) => setE('location', e.target.value)} className="input" placeholder="مثال: غرفة التخزين" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setEditingItem(null)} className="btn-secondary">إلغاء</button>
+                <button type="submit" disabled={updateMutation.isPending} className="btn-primary">
+                  {updateMutation.isPending ? 'جارٍ التحديث...' : 'تحديث البيانات'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
