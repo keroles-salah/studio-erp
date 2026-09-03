@@ -160,15 +160,33 @@ function mapInvoice(raw: any, settings: any): InvoiceData {
       accountName: settings?.['studio.account_name'] || settings?.['studio.name'] || BRAND_NAME,
       iban: settings?.['studio.iban'] || BRAND_IBAN,
     },
-    items: (raw.items ?? []).map((it: any) => ({
-      id: it.id,
-      description: it.description,
-      itemType: it.itemType || 'SERVICE',
-      quantity: it.quantity,
-      unitPrice: Number(it.unitPrice ?? 0),
-      discount: Number(it.discount ?? 0),
-      total: Number(it.total ?? 0),
-    })),
+    items: (raw.items ?? []).reduce((acc: any[], it: any) => {
+      const desc = (it.description || '').replace(/^Equipment:\s*/i, '').trim();
+      const unitPrice = Number(it.unitPrice ?? 0);
+      const discount = Number(it.discount ?? 0);
+      const qty = Number(it.quantity ?? 1);
+      const total = Number(it.total ?? (qty * unitPrice - discount));
+
+      const existing = acc.find(
+        (x) => x.description === desc && x.unitPrice === unitPrice && x.discount === discount && x.itemType === (it.itemType || 'SERVICE')
+      );
+
+      if (existing) {
+        existing.quantity += qty;
+        existing.total += total;
+      } else {
+        acc.push({
+          id: it.id,
+          description: desc,
+          itemType: it.itemType || 'SERVICE',
+          quantity: qty,
+          unitPrice,
+          discount,
+          total,
+        });
+      }
+      return acc;
+    }, []),
     payments: (raw.payments ?? []).map((p: any) => ({
       id: p.id,
       amount: Number(p.amount ?? 0),
