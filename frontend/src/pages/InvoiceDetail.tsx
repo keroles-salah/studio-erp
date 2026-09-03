@@ -21,6 +21,7 @@ import {
   Clock,
   Download,
   MessageCircle,
+  FileText,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../lib/api';
@@ -230,6 +231,15 @@ export default function InvoiceDetail() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
+  };
+
+  const handleCopyIban = () => {
+    if (data?.studio?.iban) {
+      navigator.clipboard.writeText(data.studio.iban);
+      setCopied(true);
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
+      showToast('تم نسخ رقم الآيبان إلى الحافظة');
+    }
   };
 
   const handlePrint = () => window.print();
@@ -778,41 +788,99 @@ export default function InvoiceDetail() {
             </span>
           </div>
 
-          {/* Bottom Row: Tafqeet & Notes */}
-          <div className="space-y-2 pt-1">
-            {/* Amount In Words (Tafqeet) */}
-            <div className="invoice-amount-words">
-              <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
-              <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
+          {/* Bottom Section: Tafqeet & Notes (Right) + VIP Virtual Bank Card (Left) */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-stretch pt-2">
+            {/* Right Column: Tafqeet, Notes & Certification */}
+            <div className={`${data.studio.iban ? 'md:col-span-7' : 'md:col-span-12'} flex flex-col justify-between gap-2.5`}>
+              {/* Amount In Words (Tafqeet) */}
+              <div className="invoice-amount-words">
+                <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
+                <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
+              </div>
+
+              {/* Terms / Notes if available */}
+              {data.notes && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-[11px] print:text-[9.5px]">
+                  <h4 className="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-primary-600" />
+                    <span>الشروط والأحكام / ملاحظات:</span>
+                  </h4>
+                  <p className="text-slate-600 leading-relaxed" dir="auto">{data.notes}</p>
+                </div>
+              )}
+
+              {/* Trust Badge */}
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 text-[10px] text-slate-500 print:text-[8.5px]">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                <span>فاتورة رسمية معتمدة صادرة إلكترونياً من {data.studio.name}.</span>
+              </div>
             </div>
 
-            {/* Terms / Notes if available */}
-            {data.notes && (
-              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2.5 text-[11px] print:text-[9px]">
-                <h4 className="font-bold text-slate-800 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
-                <p className="text-slate-600" dir="auto">{data.notes}</p>
+            {/* Left Column: VIP Virtual Bank Card */}
+            {data.studio.iban && (
+              <div className="md:col-span-5 flex flex-col justify-end">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-primary-950 p-4 text-white shadow-md border border-amber-400/40 print:border-slate-800 print:shadow-none print:p-3">
+                  {/* Subtle Glow Ornaments */}
+                  <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-500/10 blur-xl pointer-events-none" />
+                  <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-primary-500/15 blur-xl pointer-events-none" />
+
+                  {/* Top of Card: Bank Name & Chip */}
+                  <div className="relative flex items-center justify-between gap-2 border-b border-white/10 pb-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      {/* Electronic Chip */}
+                      <div className="grid h-6 w-8 place-items-center rounded bg-gradient-to-tr from-amber-400 via-amber-300 to-amber-200 shadow-sm border border-amber-300/50 shrink-0">
+                        <span className="block h-2.5 w-4 rounded-sm border border-amber-700/30 bg-amber-100/50" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-amber-300 leading-tight">
+                          {data.studio.bankName || 'مصرف الراجحي'}
+                        </p>
+                        <p className="text-[8px] font-mono tracking-wider text-slate-400 uppercase">OFFICIAL BANK ACCOUNT</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[8.5px] font-bold text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+                      معتمد للتحويل ✓
+                    </span>
+                  </div>
+
+                  {/* Center: Formatted IBAN */}
+                  <div className="relative my-1.5">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[8.5px] font-semibold text-slate-400 uppercase tracking-wider">
+                        رقم الآيبان الدولي (IBAN)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyIban}
+                        className="print:hidden inline-flex items-center gap-1 rounded bg-white/10 px-2 py-0.5 text-[9.5px] font-bold text-slate-200 hover:bg-white/20 transition"
+                        title="نسخ رقم الآيبان"
+                      >
+                        {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        <span>{copied ? 'تم النسخ' : 'نسخ'}</span>
+                      </button>
+                    </div>
+                    <bdi
+                      dir="ltr"
+                      className="block font-mono text-[12.5px] sm:text-[13.5px] font-black tracking-wider text-white select-all break-all"
+                    >
+                      {data.studio.iban.replace(/(.{4})/g, '$1 ').trim()}
+                    </bdi>
+                  </div>
+
+                  {/* Bottom: Beneficiary Account Name */}
+                  <div className="relative flex items-end justify-between gap-2 pt-1.5 border-t border-white/10 mt-1.5">
+                    <div className="min-w-0">
+                      <span className="block text-[8px] uppercase tracking-wider text-slate-400">اسم المستفيد / Beneficiary</span>
+                      <p className="font-mono text-xs font-bold text-slate-100 truncate max-w-[200px]" title={data.studio.accountName}>
+                        {data.studio.accountName || BRAND_NAME}
+                      </p>
+                    </div>
+                    <Building2 className="h-4 w-4 text-amber-400/80 shrink-0" />
+                  </div>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Bank Transfer Details (Footer Strip - أسفل الفاتورة) */}
-          {data.studio.iban && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-[10.5px] print:text-[9px] print:bg-white print:border-slate-300">
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-slate-700">
-                <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                  <Building2 className="h-3.5 w-3.5 text-primary-600" />
-                  <span>بيانات التحويل البنكي:</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600">
-                  <span><strong>البنك:</strong> {data.studio.bankName}</span>
-                  <span><strong>اسم الحساب:</strong> {data.studio.accountName}</span>
-                  <span className="font-mono">
-                    <strong>الآيبان (IBAN):</strong> <bdi dir="ltr" className="font-bold text-slate-950">{data.studio.iban}</bdi>
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Official Footer */}
           <div className="border-t border-slate-200 pt-2.5 space-y-1 print:pt-1">
