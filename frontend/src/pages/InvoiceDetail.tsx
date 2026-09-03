@@ -206,6 +206,7 @@ export default function InvoiceDetail() {
 
   // Quick Payment Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isSimplified, setIsSimplified] = useState(false);
   const [payAmount, setPayAmount] = useState<string>('');
   const [payMethod, setPayMethod] = useState('BANK_TRANSFER');
   const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
@@ -407,6 +408,28 @@ export default function InvoiceDetail() {
             </button>
           )}
 
+          {/* Simplified Mode Switcher */}
+          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1 w-full md:w-auto shadow-sm">
+            <button
+              type="button"
+              onClick={() => setIsSimplified(false)}
+              className={`flex-1 md:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                !isSimplified ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              📄 فاتورة تفصيلية
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSimplified(true)}
+              className={`flex-1 md:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                isSimplified ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              📋 فاتورة العميل المبسطة
+            </button>
+          </div>
+
           {/* Share to WhatsApp Button */}
           {data.customer.phone && (
             <button
@@ -438,7 +461,7 @@ export default function InvoiceDetail() {
             className="btn-primary inline-flex w-full md:w-auto items-center justify-center gap-2 px-5 py-2.5 shadow-md shadow-primary-600/20"
           >
             <Printer className="h-4 w-4" />
-            <span>طباعة الفاتورة الرسمية</span>
+            <span>طباعة الفاتورة</span>
           </button>
         </div>
       </div>
@@ -464,14 +487,41 @@ export default function InvoiceDetail() {
         />
 
         <div className="p-5 sm:p-7 print:p-2 space-y-4 print:space-y-2">
-          {/* Header: Right = Invoice Details, Left = Studio Identity */}
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-4 print:pb-2">
-            {/* 1. Document Details (Right) */}
-            <div className="w-full sm:min-w-[240px] sm:max-w-[280px] rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-start print:bg-white print:border-slate-300 print:p-2">
+          {/* 1. Official Centered Logo & Studio Identity (اللوجو في منتصف الفاتورة) */}
+          <div className="text-center border-b border-slate-200 pb-4 print:pb-2">
+            <div className="mx-auto mb-2 grid h-16 w-16 place-items-center rounded-2xl border border-slate-200 bg-white p-2 shadow-sm print:h-12 print:w-12 print:border-slate-300">
+              <img
+                src={data.studio.logo || `${import.meta.env.BASE_URL}logo.png`}
+                alt="Studio Logo"
+                className="h-12 w-12 object-contain print:h-9 print:w-9"
+              />
+            </div>
+            <h1 className="text-xl font-black tracking-tight text-slate-900 leading-tight print:text-lg">
+              {data.studio.name}
+            </h1>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary-700 mt-0.5">
+              {BRAND_NAME} · STUDIO
+            </p>
+            {data.studio.crNumber && (
+              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 mt-1">
+                <span className="font-bold text-slate-700">السجل التجاري (CR):</span>
+                <bdi className="font-mono font-bold text-slate-900" dir="ltr">{data.studio.crNumber}</bdi>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Sub-Header: Right = Invoice Details, Left = Contacts & Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-1 border-b border-slate-100">
+            {/* Document Details (Right) */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-start print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
                 <div>
-                  <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">فاتورة ضريبية</h2>
-                  <span className="text-[9px] font-bold text-slate-400" dir="ltr">TAX INVOICE</span>
+                  <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                    {isSimplified ? 'فاتورة العميل الرسمية' : 'فاتورة ضريبية'}
+                  </h2>
+                  <span className="text-[9px] font-bold text-slate-400" dir="ltr">
+                    {isSimplified ? 'CLIENT INVOICE' : 'TAX INVOICE'}
+                  </span>
                 </div>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black ${getInvoiceStatusColor(
@@ -498,7 +548,17 @@ export default function InvoiceDetail() {
                     <span className="font-semibold text-slate-800">{formatDate(data.dueDate)}</span>
                   </div>
                 )}
-                <div className="mt-1 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-1.5">
+              </div>
+            </div>
+
+            {/* Financial Summary Card (Left) */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-start print:bg-white print:border-slate-300 print:p-2">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">ملخص الحساب</h3>
+                <span className="text-[10px] text-slate-500 font-mono">SAR</span>
+              </div>
+              <div className="space-y-1 text-[11px] print:text-[9.5px]">
+                <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-slate-700">المبلغ الإجمالي:</span>
                   <span className="font-mono text-sm font-black text-primary-700 print:text-xs whitespace-nowrap">{formatCurrency(data.total)}</span>
                 </div>
@@ -511,56 +571,6 @@ export default function InvoiceDetail() {
                   <span className={`font-mono font-bold whitespace-nowrap ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                     {formatCurrency(data.remaining)}
                   </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Studio Brand & Legal Identity (Left) */}
-            <div className="flex items-start gap-3 text-start" dir="ltr">
-              <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm print:border-slate-300 print:h-11 print:w-11">
-                <img
-                  src={data.studio.logo || `${import.meta.env.BASE_URL}logo.png`}
-                  alt="Logo"
-                  className="h-11 w-11 object-contain print:h-9 print:w-9"
-                />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-primary-600">
-                    {BRAND_NAME}
-                  </span>
-                  <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[9px] font-bold text-slate-600">
-                    STUDIO
-                  </span>
-                </div>
-                <h1 className="text-lg font-black tracking-tight text-slate-900 leading-tight print:text-base">
-                  {data.studio.name}
-                </h1>
-                {data.studio.crNumber && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-600 print:text-[9.5px]">
-                    <span className="font-bold text-slate-800">السجل التجاري:</span>
-                    <bdi className="font-mono font-bold text-slate-900" dir="ltr">{data.studio.crNumber}</bdi>
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-slate-500 print:text-[8.5px]">
-                  {data.studio.phone && (
-                    <span className="inline-flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-slate-400" />
-                      <bdi dir="ltr">{data.studio.phone}</bdi>
-                    </span>
-                  )}
-                  {data.studio.email && (
-                    <span className="inline-flex items-center gap-1">
-                      <Mail className="h-3 w-3 text-slate-400" />
-                      <bdi dir="ltr">{data.studio.email}</bdi>
-                    </span>
-                  )}
-                  {data.studio.address && (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-slate-400" />
-                      <span>{data.studio.address}</span>
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -656,17 +666,17 @@ export default function InvoiceDetail() {
             </div>
           </div>
 
-          {/* Itemized Table */}
+          {/* Itemized Table (Detailed vs Simplified Client Mode) */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm print:shadow-none print:border-slate-300">
             <table className="w-full text-start text-[11px] print:text-[9.5px]">
               <thead>
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
                   <th className="w-8 px-3 py-2 text-start font-bold uppercase whitespace-nowrap">#</th>
-                  <th className="px-3 py-2 text-start font-bold uppercase">الخدمة / البند (Description)</th>
-                  <th className="w-16 px-3 py-2 text-center font-bold uppercase whitespace-nowrap">الكمية</th>
-                  <th className="w-28 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">سعر الوحدة</th>
-                  {data.discount > 0 && <th className="w-24 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">الخصم</th>}
-                  <th className="w-28 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">المجموع</th>
+                  <th className="px-3 py-2 text-start font-bold uppercase">الخدمة / المعدات / البند (Description)</th>
+                  <th className="w-24 px-3 py-2 text-center font-bold uppercase whitespace-nowrap">العدد / الكمية</th>
+                  {!isSimplified && <th className="w-28 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">سعر الوحدة</th>}
+                  {!isSimplified && data.discount > 0 && <th className="w-24 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">الخصم</th>}
+                  {!isSimplified && <th className="w-28 px-3 py-2 text-end font-bold uppercase whitespace-nowrap">المجموع</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -677,35 +687,37 @@ export default function InvoiceDetail() {
                       <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
                         <td className="px-3 py-2 font-mono text-slate-400 whitespace-nowrap">{idx + 1}</td>
                         <td className="px-3 py-2 font-semibold text-slate-900" dir="auto">{cleanDescription}</td>
-                        <td className="px-3 py-2 text-center font-mono font-medium text-slate-700 whitespace-nowrap">{item.quantity}</td>
-                        <td className="px-3 py-2 text-end font-mono text-slate-600 whitespace-nowrap">{formatCurrency(item.unitPrice)}</td>
-                        {data.discount > 0 && (
+                        <td className="px-3 py-2 text-center font-mono font-bold text-primary-700 whitespace-nowrap">{item.quantity}</td>
+                        {!isSimplified && <td className="px-3 py-2 text-end font-mono text-slate-600 whitespace-nowrap">{formatCurrency(item.unitPrice)}</td>}
+                        {!isSimplified && data.discount > 0 && (
                           <td className="px-3 py-2 text-end font-mono text-emerald-600 whitespace-nowrap">
                             {item.discount ? `- ${formatCurrency(item.discount)}` : '—'}
                           </td>
                         )}
-                        <td className="px-3 py-2 text-end font-mono font-bold text-slate-950 whitespace-nowrap">{formatCurrency(item.total)}</td>
+                        {!isSimplified && <td className="px-3 py-2 text-end font-mono font-bold text-slate-950 whitespace-nowrap">{formatCurrency(item.total)}</td>}
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={data.discount > 0 ? 6 : 5} className="py-4 text-center text-slate-400">
+                    <td colSpan={isSimplified ? 3 : (data.discount > 0 ? 6 : 5)} className="py-4 text-center text-slate-400">
                       لا توجد بنود مسجلة
                     </td>
                   </tr>
                 )}
               </tbody>
               <tfoot className="border-t-2 border-slate-200 bg-slate-50/90 font-semibold print:bg-white">
-                <tr>
-                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-1.5 text-end text-slate-600 whitespace-nowrap">
-                    المجموع الفرعي:
-                  </td>
-                  <td className="px-3 py-1.5 text-end font-mono font-bold text-slate-900 whitespace-nowrap">
-                    {formatCurrency(data.subtotal)}
-                  </td>
-                </tr>
-                {data.discount > 0 && (
+                {!isSimplified && (
+                  <tr>
+                    <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-1.5 text-end text-slate-600 whitespace-nowrap">
+                      المجموع الفرعي:
+                    </td>
+                    <td className="px-3 py-1.5 text-end font-mono font-bold text-slate-900 whitespace-nowrap">
+                      {formatCurrency(data.subtotal)}
+                    </td>
+                  </tr>
+                )}
+                {!isSimplified && data.discount > 0 && (
                   <tr>
                     <td colSpan={5} className="px-3 py-1.5 text-end text-emerald-700 whitespace-nowrap">
                       الخصم المطبق:
@@ -716,8 +728,8 @@ export default function InvoiceDetail() {
                   </tr>
                 )}
                 <tr className="bg-slate-950 text-white print:bg-slate-900">
-                  <td colSpan={data.discount > 0 ? 5 : 4} className="px-3 py-2 text-end font-black text-amber-400 text-xs whitespace-nowrap">
-                    الإجمالي المستحق:
+                  <td colSpan={isSimplified ? 2 : (data.discount > 0 ? 5 : 4)} className="px-3 py-2 text-end font-black text-amber-400 text-xs whitespace-nowrap">
+                    المبلغ الإجمالي المستحق:
                   </td>
                   <td className="px-3 py-2 text-end font-mono text-base font-black text-white print:text-xs whitespace-nowrap">
                     {formatCurrency(data.total)}

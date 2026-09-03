@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight, Phone, Mail, MapPin, Calendar, CreditCard,
-  FileText, MessageSquare, AlertCircle,
+  FileText, MessageSquare, AlertCircle, Edit2, X,
 } from 'lucide-react';
 import api from '../lib/api';
 import { formatCurrency, formatDate, formatDateTime, getBookingStatusColor, getBookingStatusLabel, getCustomerStatusLabel, getInitials, getInvoiceStatusColor, getInvoiceStatusLabel, getLeadSourceLabel, getPaymentMethodLabel } from '../lib/utils';
@@ -56,6 +57,10 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
 export default function CustomerDetail() {
   const { t } = useTranslation();
   const { id } = useParams();
+  const queryClient = useQueryClient();
+  const [showEdit, setShowEdit] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const { data, isLoading } = useQuery<CustomerDetail>({
     queryKey: ['customer', id],
@@ -72,6 +77,27 @@ export default function CustomerDetail() {
       };
     },
   });
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setErrorMsg('');
+    const fd = new FormData(e.currentTarget);
+    const payload: Record<string, any> = Object.fromEntries(fd);
+    Object.keys(payload).forEach((k) => { if (payload[k] === '') delete payload[k]; });
+    try {
+      await api.put(`/customers/${id}`, payload);
+      setShowEdit(false);
+      queryClient.invalidateQueries({ queryKey: ['customer', id] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    } catch (err: any) {
+      const respData = err?.response?.data;
+      let msg = respData?.error?.message || 'فشل حفظ بيانات العميل';
+      setErrorMsg(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -96,14 +122,24 @@ export default function CustomerDetail() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm">
-        <Link to="/customers" className="text-slate-500 hover:text-primary-600 flex items-center gap-1">
-          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-          {t('nav.customers')}
-        </Link>
-        <span className="text-slate-300">/</span>
-        <span className="font-medium text-slate-700">{data.name}</span>
+      {/* Breadcrumb & Action bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Link to="/customers" className="text-slate-500 hover:text-primary-600 flex items-center gap-1">
+            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+            {t('nav.customers')}
+          </Link>
+          <span className="text-slate-300">/</span>
+          <span className="font-medium text-slate-700">{data.name}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => { setErrorMsg(''); setShowEdit(true); }}
+          className="btn-primary flex items-center gap-1.5 self-start sm:self-auto text-sm"
+        >
+          <Edit2 className="w-4 h-4" /> تعديل بيانات العميل
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -273,6 +309,61 @@ export default function CustomerDetail() {
           </div>
         </div>
       </div>
+
+      {/* Edit Customer Modal */}
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowEdit(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">تعديل بيانات العميل</h2>
+              <button onClick={() => setShowEdit(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div>
+                <label className="label">{t('customer.name')} *</label>
+                <input name="fullName" defaultValue={data.name || ''} required className="input" placeholder="اسم العميل الكامل..." />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">{t('customer.phone')}</label>
+                  <input name="phone" defaultValue={data.phone || ''} className="input font-mono" placeholder="05XXXXXXXX" />
+                </div>
+                <div>
+                  <label className="label">{t('customer.whatsapp')}</label>
+                  <input name="whatsapp" defaultValue={data.whatsapp || ''} className="input font-mono" placeholder="رقم الواتساب..." />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">{t('customer.email')}</label>
+                  <input name="email" type="email" defaultValue={data.email || ''} className="input" placeholder="example@email.com" />
+                </div>
+                <div>
+                  <label className="label">{t('customer.city')}</label>
+                  <input name="city" defaultValue={data.city || ''} className="input" placeholder="المدينة (الرياض، جدة...)" />
+                </div>
+              </div>
+              <div>
+                <label className="label">{t('customer.address')}</label>
+                <input name="address" defaultValue={data.address || ''} className="input" placeholder="العنوان بالتفصيل..." />
+              </div>
+              <div>
+                <label className="label">{t('booking.notes')}</label>
+                <textarea name="notes" defaultValue={data.notes || ''} rows={2} className="input" placeholder="ملاحظات إضافية عن العميل..." />
+              </div>
+              {errorMsg && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{errorMsg}</div>}
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowEdit(false)} className="btn-secondary">{t('common.cancel')}</button>
+                <button type="submit" disabled={submitting} className="btn-primary">
+                  {submitting ? t('common.loading') : 'حفظ التعديلات'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

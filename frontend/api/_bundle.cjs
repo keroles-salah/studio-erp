@@ -32223,7 +32223,6 @@ async function ensureDbSchema() {
     await prisma.$executeRawUnsafe(
       `ALTER TABLE "booking_equipment" ADD COLUMN IF NOT EXISTS "quantity" INTEGER NOT NULL DEFAULT 1;`
     );
-    dbMigrationDone = true;
   } catch (err) {
     try {
       await prisma.$executeRawUnsafe(
@@ -32237,8 +32236,47 @@ async function ensureDbSchema() {
       );
     } catch {
     }
-    dbMigrationDone = true;
   }
+  try {
+    const itemsToUpsert = [
+      { code: "SPK-001", name: "\u0633\u0645\u0627\u0639\u0627\u062A", category: "\u0633\u0645\u0627\u0639\u0627\u062A", quantity: 4, rentalPrice: 100 },
+      { code: "CAM-001", name: "\u0643\u0627\u0645\u064A\u0631\u0627\u062A", category: "\u0643\u0627\u0645\u064A\u0631\u0627\u062A", quantity: 3, rentalPrice: 250 },
+      { code: "OSM-001", name: "\u0623\u0648\u0632\u0645\u0648", category: "\u0645\u062B\u0628\u062A\u0627\u062A", quantity: 1, rentalPrice: 150 },
+      { code: "LGT-001", name: "\u0625\u0636\u0627\u0621\u0629 \u0627\u0633\u062A\u0648\u062F\u064A\u0648", category: "\u0625\u0636\u0627\u0621\u0629", quantity: 2, rentalPrice: 120 }
+    ];
+    for (const item of itemsToUpsert) {
+      const existing = await prisma.equipment.findFirst({
+        where: {
+          OR: [{ equipmentCode: item.code }, { name: item.name }],
+          deletedAt: null
+        }
+      });
+      if (existing) {
+        if (existing.quantity !== item.quantity) {
+          await prisma.equipment.update({
+            where: { id: existing.id },
+            data: { quantity: item.quantity }
+          });
+        }
+      } else {
+        await prisma.equipment.create({
+          data: {
+            equipmentCode: item.code,
+            name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            rentalPrice: item.rentalPrice,
+            ownershipType: "OWNED",
+            status: "AVAILABLE",
+            location: "\u063A\u0631\u0641\u0629 \u0627\u0644\u0645\u0639\u062F\u0627\u062A \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629"
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("Equipment auto-seed error:", e);
+  }
+  dbMigrationDone = true;
 }
 
 // backend-src/src/modules/auth/auth.service.ts
