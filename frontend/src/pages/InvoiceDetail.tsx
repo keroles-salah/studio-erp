@@ -778,47 +778,21 @@ export default function InvoiceDetail() {
             </span>
           </div>
 
-          {/* Bottom Row: Tafqeet & Notes on Right, Electronic Verification QR on Left */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-12 items-stretch pt-1">
-            {/* Right side: Tafqeet & Notes */}
-            <div className="sm:col-span-7 flex flex-col justify-between gap-2">
-              {/* Amount In Words (Tafqeet) */}
-              <div className="invoice-amount-words">
-                <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
-                <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
-              </div>
-
-              {/* Terms / Notes if available */}
-              {data.notes && (
-                <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2 text-[11px] print:text-[9px]">
-                  <h4 className="font-bold text-slate-800 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
-                  <p className="text-slate-600" dir="auto">{data.notes}</p>
-                </div>
-              )}
+          {/* Bottom Row: Tafqeet & Notes */}
+          <div className="space-y-2 pt-1">
+            {/* Amount In Words (Tafqeet) */}
+            <div className="invoice-amount-words">
+              <span className="font-bold text-slate-700">المبلغ كتابةً:</span>{' '}
+              <strong className="text-slate-950">{amountToArabicWords(data.total, data.studio.currency)}</strong>
             </div>
 
-            {/* Left side: Electronic Verification QR Badge */}
-            <div className="sm:col-span-5 flex items-center gap-3 rounded-xl border border-slate-200 p-2.5 bg-slate-50/50 print:bg-white print:border-slate-300">
-              <div className="shrink-0 rounded-lg border border-slate-200 p-1 bg-white">
-                <QRCodeSVG
-                  value={`فاتورة: ${data.invoiceNumber}\nالتاريخ: ${formatDate(data.date)}\nالإجمالي: ${data.total} ${data.studio.currency}\nالاستوديو: ${data.studio.name}`}
-                  size={58}
-                  bgColor="#ffffff"
-                  fgColor="#0f172a"
-                  level="M"
-                />
+            {/* Terms / Notes if available */}
+            {data.notes && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2.5 text-[11px] print:text-[9px]">
+                <h4 className="font-bold text-slate-800 mb-0.5">الشروط والأحكام / ملاحظات:</h4>
+                <p className="text-slate-600" dir="auto">{data.notes}</p>
               </div>
-              <div className="min-w-0 space-y-0.5 text-[10px] print:text-[8.5px] text-slate-500">
-                <p className="font-bold text-slate-900 flex items-center gap-1 text-[11px] print:text-[9.5px]">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                  فاتورة إلكترونية معتمدة
-                </p>
-                <p className="leading-tight text-slate-500">امسح الرمز للتحقق من صحة بيانات الفاتورة.</p>
-                <span className="invoice-verify-chip" dir="ltr">
-                  ✓ {data.invoiceNumber}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Bank Transfer Details (Footer Strip - أسفل الفاتورة) */}
