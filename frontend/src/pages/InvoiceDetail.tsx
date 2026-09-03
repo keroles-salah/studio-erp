@@ -576,8 +576,8 @@ export default function InvoiceDetail() {
             </div>
           </div>
 
-          {/* 3 Information Cards: Billed To | Booking Info | Bank Details */}
-          <div className={`grid gap-3 grid-cols-1 ${data.booking ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+          {/* 2 Information Cards: Billed To | Booking Info */}
+          <div className={`grid gap-3 grid-cols-1 ${data.booking ? 'sm:grid-cols-2' : 'sm:grid-cols-1'}`}>
             {/* Card 1: Customer Info */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200 pb-1">
@@ -640,30 +640,6 @@ export default function InvoiceDetail() {
                 </div>
               </div>
             )}
-
-            {/* Card 3: Bank Transfer Details */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 print:bg-white print:border-slate-300 print:p-2">
-              <div className="flex items-center gap-1.5 mb-1.5 border-b border-slate-200 pb-1">
-                <Building2 className="h-3.5 w-3.5 text-primary-600" />
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700">بيانات التحويل · Bank</h3>
-              </div>
-              <div className="space-y-0.5 text-[11px] print:text-[9.5px] text-slate-600">
-                <p className="flex items-center justify-between">
-                  <span className="text-slate-500">اسم البنك:</span>
-                  <strong className="text-slate-900">{data.studio.bankName}</strong>
-                </p>
-                <p className="flex items-center justify-between">
-                  <span className="text-slate-500">اسم الحساب:</span>
-                  <strong className="text-slate-800 truncate max-w-[65%]">{data.studio.accountName}</strong>
-                </p>
-                <div className="pt-0.5">
-                  <span className="block text-[10px] text-slate-500">رقم الآيبان (IBAN):</span>
-                  <bdi className="block font-mono text-xs font-bold text-slate-950 break-all" dir="ltr">
-                    {data.studio.iban}
-                  </bdi>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Itemized Table (Detailed vs Simplified Client Mode) */}
@@ -844,6 +820,25 @@ export default function InvoiceDetail() {
               </div>
             </div>
           </div>
+
+          {/* Bank Transfer Details (Footer Strip - أسفل الفاتورة) */}
+          {data.studio.iban && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-[10.5px] print:text-[9px] print:bg-white print:border-slate-300">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-slate-700">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                  <Building2 className="h-3.5 w-3.5 text-primary-600" />
+                  <span>بيانات التحويل البنكي:</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600">
+                  <span><strong>البنك:</strong> {data.studio.bankName}</span>
+                  <span><strong>اسم الحساب:</strong> {data.studio.accountName}</span>
+                  <span className="font-mono">
+                    <strong>الآيبان (IBAN):</strong> <bdi dir="ltr" className="font-bold text-slate-950">{data.studio.iban}</bdi>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Official Footer */}
           <div className="border-t border-slate-200 pt-2.5 space-y-1 print:pt-1">
