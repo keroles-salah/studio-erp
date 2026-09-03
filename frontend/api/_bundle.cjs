@@ -32213,6 +32213,33 @@ var import_client = require("@prisma/client");
 var prisma = new import_client.PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["query", "info", "warn", "error"] : ["error"]
 });
+var dbMigrationDone = false;
+async function ensureDbSchema() {
+  if (dbMigrationDone) return;
+  try {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "equipment" ADD COLUMN IF NOT EXISTS "quantity" INTEGER NOT NULL DEFAULT 1;`
+    );
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "booking_equipment" ADD COLUMN IF NOT EXISTS "quantity" INTEGER NOT NULL DEFAULT 1;`
+    );
+    dbMigrationDone = true;
+  } catch (err) {
+    try {
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "equipment" ADD COLUMN "quantity" INTEGER NOT NULL DEFAULT 1;`
+      );
+    } catch {
+    }
+    try {
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "booking_equipment" ADD COLUMN "quantity" INTEGER NOT NULL DEFAULT 1;`
+      );
+    } catch {
+    }
+    dbMigrationDone = true;
+  }
+}
 
 // backend-src/src/modules/auth/auth.service.ts
 var import_bcryptjs = __toESM(require_bcryptjs(), 1);
@@ -37191,11 +37218,28 @@ var CustomersService = class {
       }),
       prisma.customer.count({ where })
     ]);
-    const items = rawItems.map((c) => ({
-      ...c,
-      totalBookings: c._count?.bookings ?? 0,
-      totalInvoices: c._count?.invoices ?? 0
-    }));
+    const customerIds = rawItems.map((c) => c.id);
+    const invoiceSums = customerIds.length > 0 ? await prisma.invoice.groupBy({
+      by: ["customerId"],
+      where: { customerId: { in: customerIds }, deletedAt: null },
+      _sum: { total: true, paidAmount: true }
+    }) : [];
+    const sumsById = new Map(
+      invoiceSums.map((row) => [row.customerId, row._sum])
+    );
+    const items = rawItems.map((c) => {
+      const sum = sumsById.get(c.id);
+      const totalSpending = Number(sum?.total ?? 0);
+      const totalPaid = Number(sum?.paidAmount ?? 0);
+      return {
+        ...c,
+        totalBookings: c._count?.bookings ?? 0,
+        totalInvoices: c._count?.invoices ?? 0,
+        totalSpending,
+        totalPaid,
+        outstanding: Math.max(0, totalSpending - totalPaid)
+      };
+    });
     return { items, total, page, limit };
   }
   /**
@@ -38262,6 +38306,7 @@ var EquipmentService = class {
         brand: data.brand ?? null,
         model: data.model ?? null,
         serialNumber: data.serialNumber ?? null,
+        quantity: data.quantity ?? 1,
         ownershipType: data.ownershipType,
         purchasePrice: data.purchasePrice ?? null,
         rentalCost: data.rentalCost ?? null,
@@ -38289,6 +38334,7 @@ var EquipmentService = class {
     if (data.brand !== void 0) updateData.brand = data.brand;
     if (data.model !== void 0) updateData.model = data.model;
     if (data.serialNumber !== void 0) updateData.serialNumber = data.serialNumber;
+    if (data.quantity !== void 0) updateData.quantity = data.quantity;
     if (data.ownershipType !== void 0) updateData.ownershipType = data.ownershipType;
     if (data.purchasePrice !== void 0) updateData.purchasePrice = data.purchasePrice;
     if (data.rentalCost !== void 0) updateData.rentalCost = data.rentalCost;
@@ -38327,7 +38373,7 @@ var EquipmentService = class {
     };
     const equipmentItems = await prisma.equipment.findMany({
       where: equipmentWhere,
-      select: { id: true, equipmentCode: true, name: true, status: true }
+      select: { id: true, equipmentCode: true, name: true, status: true, quantity: true }
     });
     const allBookings = await prisma.bookingEquipment.findMany({
       where: {
@@ -38375,14 +38421,21 @@ var EquipmentService = class {
       existing.push(cb);
       conflictMap.set(cb.equipmentId, existing);
     }
+    const unavailableFlags = ["MAINTENANCE", "DAMAGED", "LOST", "UNAVAILABLE"];
     const items = equipmentItems.map((eq) => {
       const conflicts = conflictMap.get(eq.id) ?? [];
-      const isAvailable = conflicts.length === 0 && eq.status === "AVAILABLE";
+      const totalUnits = eq.quantity;
+      const bookedUnits = conflicts.reduce((sum, c) => sum + (c.quantity || 0), 0);
+      const availableUnits = Math.max(0, totalUnits - bookedUnits);
+      const isAvailable = !unavailableFlags.includes(eq.status) && availableUnits > 0;
       return {
         id: eq.id,
         equipmentCode: eq.equipmentCode,
         name: eq.name,
         status: eq.status,
+        quantity: totalUnits,
+        bookedUnits,
+        availableUnits,
         isAvailable,
         conflicts: conflicts.map((c) => ({
           bookingId: c.booking.id,
@@ -38408,7 +38461,7 @@ var EquipmentService = class {
   }
   // ─── Equipment statistics ───────────────────────────────────────────
   async getEquipmentStats() {
-    const [byStatus, byCategory, byOwnershipType, total] = await Promise.all([
+    const [byStatus, byCategory, byOwnershipType, total, unitsAgg] = await Promise.all([
       prisma.equipment.groupBy({
         by: ["status"],
         where: { deletedAt: null },
@@ -38424,10 +38477,15 @@ var EquipmentService = class {
         where: { deletedAt: null },
         _count: { id: true }
       }),
-      prisma.equipment.count({ where: { deletedAt: null } })
+      prisma.equipment.count({ where: { deletedAt: null } }),
+      prisma.equipment.aggregate({
+        where: { deletedAt: null },
+        _sum: { quantity: true }
+      })
     ]);
     return {
       total,
+      totalUnits: unitsAgg._sum.quantity ?? 0,
       byStatus: byStatus.map((s) => ({ status: s.status, count: s._count.id })),
       byCategory: byCategory.map((c) => ({ category: c.category, count: c._count.id })),
       byOwnershipType: byOwnershipType.map((o) => ({
@@ -38493,6 +38551,7 @@ var createEquipmentSchema = external_exports.object({
   brand: external_exports.string().max(100).optional().nullable(),
   model: external_exports.string().max(100).optional().nullable(),
   serialNumber: external_exports.string().max(100).optional().nullable(),
+  quantity: external_exports.number().int().min(1).max(999).default(1),
   ownershipType: ownershipTypeEnum.default("OWNED"),
   purchasePrice: external_exports.number().nonnegative().optional().nullable(),
   rentalCost: external_exports.number().nonnegative().optional().nullable(),
@@ -38509,6 +38568,7 @@ var updateEquipmentSchema = external_exports.object({
   brand: external_exports.string().max(100).optional().nullable(),
   model: external_exports.string().max(100).optional().nullable(),
   serialNumber: external_exports.string().max(100).optional().nullable(),
+  quantity: external_exports.number().int().min(1).max(999).optional(),
   ownershipType: ownershipTypeEnum.optional(),
   purchasePrice: external_exports.number().nonnegative().optional().nullable(),
   rentalCost: external_exports.number().nonnegative().optional().nullable(),
@@ -39444,76 +39504,103 @@ function calculateTotals(input) {
   }, 0);
   const subtotal = servicesSubtotal + equipmentSubtotal;
   const effectiveDiscount = Math.min(input.discount, subtotal);
-  const taxableBase = subtotal - effectiveDiscount;
-  const tax = Math.max(0, taxableBase * input.taxRate / 100);
-  const total = taxableBase + tax;
+  const total = subtotal - effectiveDiscount;
   return {
     subtotal: Math.round(subtotal * 100) / 100,
     discount: Math.round(effectiveDiscount * 100) / 100,
-    tax: Math.round(tax * 100) / 100,
+    tax: 0,
     total: Math.round(total * 100) / 100
   };
 }
-async function getStudioTaxConfig() {
-  const rows = await prisma.setting.findMany({
-    where: { key: { in: ["studio.tax_rate", "studio.tax_enabled"] } }
-  });
-  const map = {};
-  for (const r of rows) map[r.key] = r.value;
-  const enabled = map["studio.tax_enabled"] !== "false";
-  const rate = map["studio.tax_rate"] === void 0 ? 0 : Number(map["studio.tax_rate"]);
-  return { enabled, rate: Number.isFinite(rate) && rate > 0 ? rate : 0 };
-}
 async function checkEquipmentConflict(equipmentItems, eventDate, startTime, endTime, excludeBookingId) {
   const conflicts = [];
-  const seenIds = /* @__PURE__ */ new Set();
+  const requestedMap = /* @__PURE__ */ new Map();
   for (const item of equipmentItems) {
-    if (seenIds.has(item.equipmentId)) {
-      const eq = await prisma.equipment.findUnique({ where: { id: item.equipmentId }, select: { name: true, equipmentCode: true } });
-      conflicts.push(`\u0627\u0644\u0645\u0639\u062F\u0629 "${eq?.name || item.equipmentId}" \u0645\u0643\u0631\u0631\u0629 \u0641\u064A \u0646\u0641\u0633 \u0637\u0644\u0628 \u0627\u0644\u062D\u062C\u0632`);
+    const qty = Number.isInteger(item.quantity) ? item.quantity : 1;
+    requestedMap.set(item.equipmentId, (requestedMap.get(item.equipmentId) ?? 0) + qty);
+  }
+  const ids = Array.from(requestedMap.keys());
+  if (ids.length === 0) return conflicts;
+  const unavailableFlags = ["MAINTENANCE", "DAMAGED", "LOST", "UNAVAILABLE"];
+  const equipments = await prisma.equipment.findMany({
+    where: { id: { in: ids }, deletedAt: null },
+    select: { id: true, name: true, equipmentCode: true, quantity: true, status: true }
+  });
+  const equipmentMap = new Map(equipments.map((e) => [e.id, e]));
+  for (const [eqId, requestedQty] of requestedMap) {
+    const eq = equipmentMap.get(eqId);
+    if (!eq) {
+      conflicts.push(`\u0627\u0644\u0645\u0639\u062F\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629 (${eqId})`);
+      continue;
     }
-    seenIds.add(item.equipmentId);
+    if (unavailableFlags.includes(eq.status)) {
+      conflicts.push(`\u0627\u0644\u0645\u0639\u062F\u0629 "${eq.name} (${eq.equipmentCode})" \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u062D\u062C\u0632 \u062D\u0627\u0644\u064A\u0627\u064B (\u0641\u064A \u0627\u0644\u0635\u064A\u0627\u0646\u0629/\u062A\u0627\u0644\u0641\u0629/\u0645\u0641\u0642\u0648\u062F\u0629).`);
+      continue;
+    }
+    if (requestedQty > eq.quantity) {
+      conflicts.push(
+        `\u0627\u0644\u0645\u0639\u062F\u0629 "${eq.name} (${eq.equipmentCode})": \u0627\u0644\u0643\u0645\u064A\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 ${requestedQty} \u0623\u0643\u0628\u0631 \u0645\u0646 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u062A\u0648\u0641\u0631 (${eq.quantity}).`
+      );
+    }
   }
   const target = new Date(eventDate);
   const dayStart = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate(), 0, 0, 0, 0));
   const dayEnd = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate() + 1, 0, 0, 0, 0));
-  for (const item of equipmentItems) {
-    const existing = await prisma.bookingEquipment.findMany({
-      where: {
-        equipmentId: item.equipmentId,
-        booking: {
-          status: { notIn: ["CANCELLED"] },
-          deletedAt: null,
-          ...excludeBookingId ? { id: { not: excludeBookingId } } : {},
-          event: {
-            eventDate: {
-              gte: dayStart,
-              lt: dayEnd
-            }
-          }
+  const dateStr = target.toISOString().split("T")[0];
+  const existingRows = await prisma.bookingEquipment.findMany({
+    where: {
+      equipmentId: { in: ids },
+      booking: {
+        status: { notIn: ["CANCELLED"] },
+        deletedAt: null,
+        ...excludeBookingId ? { id: { not: excludeBookingId } } : {},
+        event: { eventDate: { gte: dayStart, lt: dayEnd } }
+      }
+    },
+    include: {
+      booking: {
+        select: {
+          id: true,
+          bookingNumber: true,
+          status: true,
+          customer: { select: { fullName: true } },
+          event: { select: { eventDate: true } }
         }
       },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            bookingNumber: true,
-            status: true,
-            customer: { select: { fullName: true } },
-            event: { select: { eventDate: true, startTime: true, endTime: true } }
-          }
-        },
-        equipment: { select: { id: true, name: true, equipmentCode: true } }
-      }
-    });
-    for (const res of existing) {
-      const formattedDate = target.toISOString().split("T")[0];
+      equipment: { select: { id: true, name: true, equipmentCode: true } }
+    }
+  });
+  const bookedByEquipment = /* @__PURE__ */ new Map();
+  for (const row of existingRows) {
+    const entry = bookedByEquipment.get(row.equipmentId) ?? { qty: 0, rows: [] };
+    entry.qty += row.quantity;
+    entry.rows.push(row);
+    bookedByEquipment.set(row.equipmentId, entry);
+  }
+  for (const [eqId, requestedQty] of requestedMap) {
+    const eq = equipmentMap.get(eqId);
+    const booked = bookedByEquipment.get(eqId);
+    if (!eq || !booked) continue;
+    if (booked.qty + requestedQty > eq.quantity) {
+      const details = booked.rows.map((r) => `\u0627\u0644\u062D\u062C\u0632 ${r.booking.bookingNumber} (${r.booking.customer?.fullName ?? "\u0628\u062F\u0648\u0646 \u0639\u0645\u064A\u0644"}) \u0628\u0643\u0645\u064A\u0629 ${r.quantity}`).join("\u060C ");
       conflicts.push(
-        `\u0627\u0644\u0645\u0639\u062F\u0629 "${res.equipment.name} (${res.equipment.equipmentCode})" \u0645\u062D\u062C\u0648\u0632\u0629 \u0628\u0627\u0644\u0641\u0639\u0644 \u0641\u064A \u0646\u0641\u0633 \u0627\u0644\u064A\u0648\u0645 (${formattedDate}) \u0644\u0644\u062D\u062C\u0632 \u0631\u0642\u0645 ${res.booking.bookingNumber}${res.booking.customer?.fullName ? ` \u0644\u0644\u0639\u0645\u064A\u0644 (${res.booking.customer.fullName})` : ""}. \u0644\u0627 \u064A\u0645\u0643\u0646 \u062D\u062C\u0632 \u0646\u0641\u0633 \u0627\u0644\u0645\u0639\u062F\u0629 \u0645\u0631\u062A\u064A\u0646 \u0641\u064A \u0646\u0641\u0633 \u0627\u0644\u064A\u0648\u0645.`
+        `\u0627\u0644\u0645\u0639\u062F\u0629 "${eq.name} (${eq.equipmentCode})": \u0627\u0644\u0645\u062A\u0627\u062D \u064A\u0648\u0645 ${dateStr} \u0647\u0648 ${Math.max(0, eq.quantity - booked.qty)} \u0648\u0627\u0644\u0645\u0637\u0644\u0648\u0628 ${requestedQty} \u2014 \u0645\u062D\u062C\u0648\u0632 \u0645\u0646\u0647\u0627 ${booked.qty} \u0628\u0627\u0644\u0641\u0639\u0644 (${details}).`
       );
     }
   }
   return conflicts;
+}
+function mergeEquipmentItems(items) {
+  const map = /* @__PURE__ */ new Map();
+  for (const item of items) {
+    const existing = map.get(item.equipmentId);
+    if (existing) {
+      map.set(item.equipmentId, { ...existing, quantity: existing.quantity + item.quantity });
+    } else {
+      map.set(item.equipmentId, { ...item });
+    }
+  }
+  return Array.from(map.values());
 }
 async function releaseBookingResources(tx, bookingId, equipmentItems) {
   for (const eq of equipmentItems) {
@@ -39676,9 +39763,10 @@ var bookingsService = {
     const { event: eventData, services: serviceItems, equipment: equipmentItems, ...bookingFields } = input;
     const serviceNameMap = /* @__PURE__ */ new Map();
     const equipmentNameMap = /* @__PURE__ */ new Map();
+    const mergedEquipmentItems = mergeEquipmentItems(equipmentItems);
     if (equipmentItems.length > 0) {
       const conflicts = await checkEquipmentConflict(
-        equipmentItems.map((e) => ({ equipmentId: e.equipmentId, quantity: e.quantity })),
+        mergedEquipmentItems.map((e) => ({ equipmentId: e.equipmentId, quantity: e.quantity })),
         eventData.eventDate,
         eventData.startTime,
         eventData.endTime
@@ -39716,7 +39804,7 @@ var bookingsService = {
       }
     }
     if (equipmentItems.length > 0) {
-      const equipmentIds = equipmentItems.map((e) => e.equipmentId);
+      const equipmentIds = mergedEquipmentItems.map((e) => e.equipmentId);
       const foundEquipment = await prisma.equipment.findMany({
         where: { id: { in: equipmentIds }, deletedAt: null },
         select: { id: true, name: true, status: true }
@@ -39732,25 +39820,15 @@ var bookingsService = {
         };
       }
     }
-    for (const eq of equipmentItems) {
+    for (const eq of mergedEquipmentItems) {
       if (!Number.isInteger(eq.quantity) || eq.quantity < 1) {
         throw { status: 400, code: "INVALID_EQUIPMENT_QUANTITY", message: "Equipment quantity must be a positive integer" };
       }
-      if (eq.quantity > 1) {
-        const eqName = equipmentNameMap.get(eq.equipmentId) || eq.equipmentId;
-        throw {
-          status: 400,
-          code: "INSUFFICIENT_EQUIPMENT",
-          message: `Cannot book more than 1 unit of "${eqName}" - only 1 unit is available`
-        };
-      }
     }
-    const taxConfig = await getStudioTaxConfig();
     const totals = calculateTotals({
       services: serviceItems,
-      equipment: equipmentItems,
-      discount: bookingFields.discount,
-      taxRate: taxConfig.enabled ? taxConfig.rate : 0
+      equipment: mergedEquipmentItems,
+      discount: bookingFields.discount
     });
     const result = await prisma.$transaction(async (tx) => {
       const bookingNumber = await generateBookingNumber(tx);
@@ -39780,7 +39858,7 @@ var bookingsService = {
           remainingAmount: Math.max(0, totals.total - input.depositPaid),
           depositRequired: bookingFields.depositRequired,
           depositPaid: bookingFields.depositPaid,
-          taxRate: taxConfig.enabled ? taxConfig.rate : 0,
+          taxRate: 0,
           depositDate: input.depositPaid > 0 ? /* @__PURE__ */ new Date() : null,
           notes: bookingFields.notes ?? null,
           createdById: userId
@@ -39803,8 +39881,8 @@ var bookingsService = {
           }))
         });
       }
-      if (equipmentItems.length > 0) {
-        for (const eq of equipmentItems) {
+      if (mergedEquipmentItems.length > 0) {
+        for (const eq of mergedEquipmentItems) {
           const totalRevenue = Math.max(0, eq.quantity * eq.unitPrice);
           const totalCost = eq.quantity * eq.rentalCost;
           await tx.bookingEquipment.create({
@@ -39857,11 +39935,11 @@ var bookingsService = {
           }))
         });
       }
-      if (equipmentItems.length > 0) {
+      if (mergedEquipmentItems.length > 0) {
         await tx.invoiceItem.createMany({
-          data: equipmentItems.map((e) => ({
+          data: mergedEquipmentItems.map((e) => ({
             invoiceId: invoice.id,
-            description: `Equipment: ${equipmentNameMap.get(e.equipmentId) ?? e.equipmentId}`,
+            description: equipmentNameMap.get(e.equipmentId) ?? e.equipmentId,
             itemType: "EQUIPMENT",
             referenceId: e.equipmentId,
             quantity: e.quantity,
@@ -39919,7 +39997,7 @@ var bookingsService = {
       throw { status: 400, code: "BAD_REQUEST", message: "Cannot update a cancelled booking" };
     }
     let totals;
-    if (input.discount !== void 0 || input.taxRate !== void 0 || input.event !== void 0) {
+    if (input.discount !== void 0 || input.event !== void 0) {
       const servicesForCalc = existing.services.map((s) => ({
         quantity: s.quantity,
         unitPrice: Number(s.unitPrice),
@@ -39929,12 +40007,10 @@ var bookingsService = {
         quantity: e.quantity,
         unitPrice: Number(e.unitPrice)
       }));
-      const taxConfig = await getStudioTaxConfig();
       totals = calculateTotals({
         services: servicesForCalc,
         equipment: equipmentForCalc,
-        discount: input.discount ?? Number(existing.discount),
-        taxRate: taxConfig.enabled ? taxConfig.rate : 0
+        discount: input.discount ?? Number(existing.discount)
       });
     }
     if (input.event) {
@@ -40106,7 +40182,7 @@ var serviceItemSchema = external_exports.object({
 });
 var equipmentItemSchema = external_exports.object({
   equipmentId: external_exports.string().uuid(),
-  quantity: external_exports.number().int().min(1).max(1, "Equipment quantity cannot exceed 1 (each equipment is a single unit)"),
+  quantity: external_exports.number().int().min(1).max(999, "Equipment quantity cannot exceed 999"),
   unitPrice: external_exports.number().min(0),
   rentalCost: external_exports.number().min(0).default(0),
   notes: external_exports.string().optional().nullable()
@@ -40129,9 +40205,8 @@ var createBookingSchema = external_exports.object({
   depositRequired: external_exports.number().min(0).default(0),
   depositPaid: external_exports.number().min(0).default(0),
   notes: external_exports.string().optional().nullable(),
-  taxRate: external_exports.number().min(0).max(100).default(15),
   discount: external_exports.number().min(0).default(0),
-  depositPaymentMethod: paymentMethodEnum.optional()
+  depositPaymentMethod: external_exports.string().max(50).optional()
 }).refine(
   (data) => {
     if (data.event.startTime && data.event.endTime) {
@@ -40153,7 +40228,6 @@ var updateBookingSchema = external_exports.object({
   nextPaymentDate: external_exports.coerce.date().optional().nullable(),
   notes: external_exports.string().optional().nullable(),
   discount: external_exports.number().min(0).optional(),
-  taxRate: external_exports.number().min(0).max(100).optional(),
   event: eventSchema.partial().optional()
 }).refine(
   (data) => {
@@ -40362,29 +40436,17 @@ var InvoicesService = class {
     }
     return `${prefix}${String(sequence).padStart(4, "0")}`;
   }
-  // ── Read studio tax settings (single source of truth) ──
-  async getTaxConfig() {
-    const keys = ["studio.tax_rate", "studio.tax_enabled"];
-    const rows = await prisma.setting.findMany({ where: { key: { in: keys } } });
-    const map = {};
-    for (const r of rows) map[r.key] = r.value;
-    const enabled = map["studio.tax_enabled"] !== "false";
-    const rate = map["studio.tax_rate"] === void 0 ? 0 : Number(map["studio.tax_rate"]);
-    return { enabled, rate: Number.isFinite(rate) && rate > 0 ? rate : 0 };
-  }
-  // ─── Calculate invoice totals from items ───────────────────
-  calculateInvoiceTotals(items, discount = 0, taxRate = 0) {
+  // ─── Calculate invoice totals from items (no tax) ──────────
+  calculateInvoiceTotals(items, discount = 0) {
     const subtotal = items.reduce((sum, item) => {
       const itemTotal = item.total || item.quantity * item.unitPrice - item.discount;
       return sum + itemTotal;
     }, 0);
-    const discountedSubtotal = subtotal - discount;
-    const tax = discountedSubtotal * (taxRate / 100);
-    const total = discountedSubtotal + tax;
+    const total = subtotal - discount;
     return {
       subtotal: Math.round(subtotal * 100) / 100,
       discount: Math.round(discount * 100) / 100,
-      tax: Math.round(tax * 100) / 100,
+      tax: 0,
       total: Math.round(total * 100) / 100
     };
   }
@@ -40514,7 +40576,12 @@ var InvoicesService = class {
             event: {
               select: {
                 eventType: true,
-                eventDate: true
+                eventDate: true,
+                startTime: true,
+                endTime: true,
+                venueName: true,
+                venueAddress: true,
+                city: true
               }
             }
           }
@@ -40545,10 +40612,8 @@ var InvoicesService = class {
       0
     );
     const computedDiscount = Math.min(data.discount, computedSubtotal);
-    const taxConfig = await this.getTaxConfig();
-    const effectiveTaxRate = taxConfig.enabled ? taxConfig.rate : 0;
-    const computedTax = Math.round((computedSubtotal - computedDiscount) * (effectiveTaxRate / 100) * 100) / 100;
-    const computedTotal = Math.round((computedSubtotal - computedDiscount + computedTax) * 100) / 100;
+    const computedTax = 0;
+    const computedTotal = Math.round((computedSubtotal - computedDiscount) * 100) / 100;
     if (data.bookingId) {
       const booking = await prisma.booking.findUnique({
         where: { id: data.bookingId },
@@ -40634,12 +40699,9 @@ var InvoicesService = class {
       });
       const subtotal = current.subtotal.toNumber();
       const newDiscount = Math.min(Math.max(0, data.discount), subtotal);
-      const taxConfig = await this.getTaxConfig();
-      const effectiveTaxRate = taxConfig.enabled ? taxConfig.rate : 0;
-      const newTax = Math.round((subtotal - newDiscount) * (effectiveTaxRate / 100) * 100) / 100;
-      const newTotal = Math.round((subtotal - newDiscount + newTax) * 100) / 100;
+      const newTotal = Math.round((subtotal - newDiscount) * 100) / 100;
       updateData.discount = newDiscount;
-      updateData.tax = newTax;
+      updateData.tax = 0;
       updateData.total = newTotal;
       updateData.remainingAmount = Math.max(0, newTotal - current.paidAmount.toNumber());
     }
@@ -41276,7 +41338,7 @@ var createPaymentSchema = external_exports.object({
   bookingId: external_exports.string().uuid().optional().nullable(),
   customerId: external_exports.string().uuid().optional().nullable(),
   amount: external_exports.number().positive("Payment amount must be positive"),
-  paymentMethod: paymentMethodEnum3,
+  paymentMethod: external_exports.string().min(1, "Payment method is required").max(50),
   paymentDate: external_exports.coerce.date().default(() => /* @__PURE__ */ new Date()),
   referenceNumber: external_exports.string().max(255).optional().nullable(),
   notes: external_exports.string().optional().nullable(),
@@ -41288,7 +41350,7 @@ var listPaymentsQuerySchema = external_exports.object({
   invoiceId: external_exports.string().uuid().optional(),
   bookingId: external_exports.string().uuid().optional(),
   customerId: external_exports.string().uuid().optional(),
-  paymentMethod: paymentMethodEnum3.optional(),
+  paymentMethod: external_exports.string().max(50).optional(),
   startDate: external_exports.coerce.date().optional(),
   endDate: external_exports.coerce.date().optional(),
   sortBy: external_exports.enum(["paymentDate", "amount", "createdAt", "paymentMethod"]).default("paymentDate"),
@@ -43673,6 +43735,19 @@ var audit_routes_default = router18;
 var import_express19 = __toESM(require_express2(), 1);
 
 // backend-src/src/modules/settings/settings.service.ts
+var PAYMENT_METHODS_KEY = "studio.payment_methods";
+var DEFAULT_PAYMENT_METHODS = [
+  { value: "CASH", label: "\u0646\u0642\u062F\u0627\u064B", enabled: true },
+  { value: "BANK_TRANSFER", label: "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A", enabled: true },
+  { value: "MADA", label: "\u0645\u062F\u0649", enabled: true },
+  { value: "CARD", label: "\u0628\u0637\u0627\u0642\u0629", enabled: true },
+  { value: "STC_PAY", label: "STC Pay", enabled: true },
+  { value: "APPLE_PAY", label: "Apple Pay", enabled: true },
+  { value: "ONLINE_PAYMENT", label: "\u062F\u0641\u0639 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A", enabled: true },
+  { value: "TAMARA", label: "\u062A\u0645\u0627\u0631\u0627", enabled: false },
+  { value: "TABBY", label: "\u062A\u0627\u0628\u064A", enabled: false },
+  { value: "OTHER", label: "\u0623\u062E\u0631\u0649", enabled: true }
+];
 var settingsService = {
   async getSetting(key) {
     const setting = await prisma.setting.findUnique({
@@ -43724,6 +43799,29 @@ var settingsService = {
     );
     await prisma.$transaction(operations);
     return settings;
+  },
+  async getPaymentMethods() {
+    const setting = await prisma.setting.findUnique({
+      where: { key: PAYMENT_METHODS_KEY }
+    });
+    if (!setting) return DEFAULT_PAYMENT_METHODS;
+    try {
+      const parsed = JSON.parse(setting.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((m) => ({
+          value: String(m.value ?? ""),
+          label: String(m.label ?? m.value ?? ""),
+          enabled: m.enabled !== false
+        }));
+      }
+      return DEFAULT_PAYMENT_METHODS;
+    } catch {
+      return DEFAULT_PAYMENT_METHODS;
+    }
+  },
+  async savePaymentMethods(methods) {
+    await this.setSetting(PAYMENT_METHODS_KEY, JSON.stringify(methods), "finance");
+    return methods;
   }
 };
 
@@ -43736,6 +43834,15 @@ var updateSettingsSchema = external_exports.object({
       category: external_exports.string().optional()
     })
   )
+});
+var paymentMethodsSchema = external_exports.object({
+  methods: external_exports.array(
+    external_exports.object({
+      value: external_exports.string().min(1, "Method code is required").max(50).regex(/^[A-Z0-9_]+$/, "Code must be uppercase letters, numbers or underscore"),
+      label: external_exports.string().min(1, "Method label is required").max(100),
+      enabled: external_exports.boolean().default(true)
+    })
+  ).min(1, "At least one payment method is required")
 });
 
 // backend-src/src/modules/settings/settings.controller.ts
@@ -43785,6 +43892,34 @@ var settingsController = {
       }
       throw err;
     }
+  },
+  async getPaymentMethods(_req, res) {
+    const data = await settingsService.getPaymentMethods();
+    res.json({ success: true, data });
+  },
+  async savePaymentMethods(req, res) {
+    try {
+      const data = paymentMethodsSchema.parse(req.body);
+      const saved = await settingsService.savePaymentMethods(data.methods);
+      await logAction({
+        userId: req.user.id,
+        action: "UPDATE",
+        entity: "Settings",
+        entityId: "payment-methods",
+        newValue: { methods: saved },
+        ipAddress: req.ip
+      });
+      res.json({ success: true, data: saved });
+    } catch (err) {
+      if (err instanceof external_exports.ZodError) {
+        res.status(400).json({
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: err.errors[0].message }
+        });
+        return;
+      }
+      throw err;
+    }
   }
 };
 
@@ -43794,6 +43929,8 @@ router19.use(authenticate);
 router19.get("/", requirePermission("settings.view"), settingsController.list);
 router19.get("/studio", requirePermission("settings.view"), settingsController.getStudioSettings);
 router19.patch("/", requirePermission("settings.update"), settingsController.update);
+router19.get("/payment-methods", requirePermission("settings.view"), settingsController.getPaymentMethods);
+router19.put("/payment-methods", requirePermission("settings.update"), settingsController.savePaymentMethods);
 router19.get("/:key", requirePermission("settings.view"), settingsController.getByKey);
 var settings_routes_default = router19;
 
@@ -44522,6 +44659,13 @@ var public_routes_default = router22;
 
 // backend-src/src/app.ts
 var app = (0, import_express23.default)();
+app.use(async (_req, _res, next) => {
+  try {
+    await ensureDbSchema();
+  } catch {
+  }
+  next();
+});
 app.set("trust proxy", 1);
 app.use(helmet());
 app.use(corsMiddleware);

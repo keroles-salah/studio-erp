@@ -32,9 +32,18 @@ import auditRoutes from './modules/audit/audit.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import searchRoutes from './modules/search/search.routes';
+import { ensureDbSchema } from './config/prisma';
 import publicRoutes from './modules/public/public.routes';
 
 const app = express();
+
+// Ensure DB schema migrations (e.g. quantity column) before handling requests
+app.use(async (_req, _res, next) => {
+  try {
+    await ensureDbSchema();
+  } catch {}
+  next();
+});
 
 // Behind Render/reverse proxy: needed for correct client IPs + rate limiting
 app.set('trust proxy', 1);
