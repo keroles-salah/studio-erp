@@ -510,7 +510,7 @@ export default function InvoiceDetail() {
               {data.studio.name}
             </h1>
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-primary-700 mt-0.5">
-              {BRAND_NAME} · STUDIO
+              {data.studio.name} · STUDIO
             </p>
             {data.studio.crNumber && (
               <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 mt-1">
@@ -518,6 +518,39 @@ export default function InvoiceDetail() {
                 <bdi className="font-mono font-bold text-slate-900" dir="ltr">{data.studio.crNumber}</bdi>
               </div>
             )}
+            {/* Studio Contact Info Row */}
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-slate-500 print:text-[8.5px]">
+              {data.studio.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone className="h-2.5 w-2.5 text-slate-400" />
+                  <bdi dir="ltr">{data.studio.phone}</bdi>
+                </span>
+              )}
+              {data.studio.email && (
+                <>
+                  <span className="text-slate-300 select-none">·</span>
+                  <span className="flex items-center gap-1">
+                    <Mail className="h-2.5 w-2.5 text-slate-400" />
+                    <bdi dir="ltr">{data.studio.email}</bdi>
+                  </span>
+                </>
+              )}
+              {data.studio.website && (
+                <>
+                  <span className="text-slate-300 select-none">·</span>
+                  <bdi dir="ltr" className="text-primary-600 font-medium">{data.studio.website}</bdi>
+                </>
+              )}
+              {data.studio.address && (
+                <>
+                  <span className="text-slate-300 select-none">·</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-2.5 w-2.5 text-slate-400" />
+                    <span>{data.studio.address}</span>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           {/* 2. Sub-Header: Right = Invoice Details, Left = Contacts & Status */}
@@ -565,23 +598,28 @@ export default function InvoiceDetail() {
             <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-start print:bg-white print:border-slate-300 print:p-2">
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">ملخص الحساب</h3>
-                <span className="text-[10px] text-slate-500 font-mono">SAR</span>
+                {isPaid
+                  ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-700"><CheckCircle2 className="h-2.5 w-2.5" />مسددة بالكامل</span>
+                  : <span className="text-[10px] text-slate-500 font-mono">SAR</span>
+                }
               </div>
               <div className="space-y-1 text-[11px] print:text-[9.5px]">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold text-slate-700">المبلغ الإجمالي:</span>
                   <span className="font-mono text-sm font-black text-primary-700 print:text-xs whitespace-nowrap">{formatCurrency(data.total)}</span>
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-bold text-emerald-700">المسدد:</span>
-                  <span className="font-mono font-bold text-emerald-700 whitespace-nowrap">{formatCurrency(data.paid)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-bold text-red-600">المتبقي:</span>
-                  <span className={`font-mono font-bold whitespace-nowrap ${data.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {formatCurrency(data.remaining)}
-                  </span>
-                </div>
+                {data.paid > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-bold text-emerald-700">المسدد:</span>
+                    <span className="font-mono font-bold text-emerald-700 whitespace-nowrap">{formatCurrency(data.paid)}</span>
+                  </div>
+                )}
+                {data.remaining > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-bold text-red-600">المتبقي:</span>
+                    <span className="font-mono font-bold text-red-600 whitespace-nowrap">{formatCurrency(data.remaining)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -725,7 +763,31 @@ export default function InvoiceDetail() {
             </table>
           </div>
 
-          {/* Payment History (Web View Only) */}
+          {/* Simplified Mode: Big Total Highlight Card */}
+          {isSimplified && (
+            <div className="rounded-2xl border-2 border-primary-200 bg-primary-50/60 px-5 py-4 text-center print:border-slate-300 print:bg-white print:py-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary-600 print:text-[9px]">
+                إجمالي المبلغ المستحق
+              </p>
+              <p className="mt-1 font-mono text-3xl font-black text-slate-950 print:text-2xl">
+                {formatCurrency(data.total)}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-500 print:text-[8.5px]">
+                {amountToArabicWords(data.total, data.studio.currency)}
+              </p>
+              {data.remaining > 0 && (
+                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-0.5 text-[10px] font-bold text-red-700">
+                  المتبقي للسداد: {formatCurrency(data.remaining)}
+                </p>
+              )}
+              {isPaid && (
+                <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-0.5 text-[10px] font-bold text-emerald-700">
+                  <CheckCircle2 className="h-3 w-3" /> مسددة بالكامل ✓
+                </p>
+              )}
+            </div>
+          )}
+
           {data.payments?.length > 0 && (
             <div id="invoice-payment-history" className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 print:hidden">
               <div className="flex items-center gap-1.5 mb-2">
@@ -834,6 +896,22 @@ export default function InvoiceDetail() {
             </div>
           )}
 
+          {/* Signature & Stamp Section (Print Only) */}
+          <div className="hidden print:grid grid-cols-2 gap-6 pt-4 mt-2 border-t border-dashed border-slate-300">
+            <div className="text-center space-y-1">
+              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">توقيع العميل المعتمد</p>
+              <p className="text-[8.5px] text-slate-400">Authorized Client Signature</p>
+              <div className="mt-3 border-b border-slate-400 mx-4" style={{ height: '40px' }} />
+              <p className="text-[8px] text-slate-500 mt-1">الاسم: ................................</p>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">ختم وتوقيع المنشأة</p>
+              <p className="text-[8.5px] text-slate-400">Company Stamp & Signature</p>
+              <div className="mt-3 border-b border-slate-400 mx-4" style={{ height: '40px' }} />
+              <p className="text-[8px] text-slate-500 mt-1">{data.studio.name}</p>
+            </div>
+          </div>
+
           {/* Official Footer */}
           <div className="border-t border-slate-200 pt-2.5 space-y-1 print:pt-1">
             <p className="text-center text-[11px] font-bold text-primary-700 print:text-[8.5px]">
@@ -847,6 +925,7 @@ export default function InvoiceDetail() {
               </p>
             </div>
           </div>
+
         </div>
       </div>
 
