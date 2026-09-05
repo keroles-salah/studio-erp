@@ -244,46 +244,6 @@ export default function InvoiceDetail() {
 
   const handlePrint = () => window.print();
 
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const handleDownloadPdf = async () => {
-    // Capture the visible invoice document. Capturing the print-only element
-    // while it was hidden/off-screen caused blank PDFs in some browsers.
-    const el = document.getElementById('invoice-print') as HTMLElement | null;
-    if (!el || pdfBusy || !data) return;
-
-    setPdfBusy(true);
-    const paymentHistory = document.getElementById('invoice-payment-history') as HTMLElement | null;
-    const previousPaymentDisplay = paymentHistory?.style.display ?? '';
-    try {
-      // Keep payment history in the web view, but omit it from the client-facing PDF.
-      if (paymentHistory) paymentHistory.style.display = 'none';
-      // Let the branded web font finish loading before html2canvas captures it.
-      await document.fonts?.ready;
-      const html2pdf = (await import('html2pdf.js')).default;
-      await html2pdf()
-        .set({
-          margin: [8, 8, 8, 8],
-          filename: `${data.invoiceNumber || 'invoice'}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            scrollX: 0,
-            scrollY: -window.scrollY,
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        })
-        .from(el)
-        .save();
-      showToast('تم تحميل ملف PDF بنجاح');
-    } catch {
-      showToast('تعذر إنشاء ملف PDF، حاول مرة أخرى');
-    } finally {
-      if (paymentHistory) paymentHistory.style.display = previousPaymentDisplay;
-      setPdfBusy(false);
-    }
-  };
 
   const handleCopyInvoiceNumber = () => {
     if (!data?.invoiceNumber) return;
@@ -453,16 +413,6 @@ export default function InvoiceDetail() {
             </button>
           )}
 
-          {/* Download PDF Button */}
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={pdfBusy}
-            className="inline-flex w-full md:w-auto items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            <Download className="h-4 w-4 text-slate-600" />
-            <span>{pdfBusy ? 'جارٍ التحميل...' : 'تحميل PDF'}</span>
-          </button>
 
           {/* Print Button */}
           <button
