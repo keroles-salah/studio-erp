@@ -810,30 +810,27 @@ export default function InvoiceDetail() {
 
           {/* Minimalist Inline Bank Line (سطر تذييل محاسبي فائق النقاء والتناغم) */}
           {data.studio.iban && (
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3.5 py-2 text-[11px] print:text-[9.5px] print:border-slate-300 print:bg-white text-slate-700">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <Building2 className="h-3.5 w-3.5 text-primary-600 shrink-0" />
-                <span className="font-bold text-slate-900">للتحويل البنكي:</span>
-                <span className="font-semibold text-slate-800">{data.studio.bankName || 'مصرف الراجحي'}</span>
-                <span className="text-slate-300">·</span>
-                <span className="text-slate-500">الحساب:</span>
-                <span className="font-semibold text-slate-800">{data.studio.accountName || BRAND_NAME}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">الآيبان:</span>
-                <bdi dir="ltr" className="font-mono font-bold text-slate-950 tracking-wider select-all">
-                  {data.studio.iban.replace(/(.{4})/g, '$1 ').trim()}
-                </bdi>
-                <button
-                  type="button"
-                  onClick={handleCopyIban}
-                  className="print:hidden inline-flex items-center gap-1 rounded bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition"
-                  title="نسخ رقم الآيبان"
-                >
-                  {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3 text-slate-500" />}
-                  <span>{copied ? 'تم النسخ' : 'نسخ'}</span>
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3.5 py-2 text-[11px] print:text-[9.5px] print:border-slate-300 print:bg-white text-slate-700">
+              <Building2 className="h-3.5 w-3.5 text-primary-600 shrink-0" />
+              <span className="font-bold text-slate-900">للتحويل البنكي:</span>
+              <span className="font-semibold text-slate-800">{data.studio.bankName || 'مصرف الراجحي'}</span>
+              <span className="text-slate-300 select-none px-0.5">|</span>
+              <span className="text-slate-500">الحساب:</span>
+              <span className="font-semibold text-slate-800">{data.studio.accountName || BRAND_NAME}</span>
+              <span className="text-slate-300 select-none px-0.5">|</span>
+              <span className="text-slate-500">الآيبان:</span>
+              <bdi dir="ltr" className="font-mono font-bold text-slate-950 tracking-wider select-all">
+                {data.studio.iban.replace(/(.{4})/g, '$1 ').trim()}
+              </bdi>
+              <button
+                type="button"
+                onClick={handleCopyIban}
+                className="print:hidden inline-flex items-center gap-1 rounded bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-300 transition"
+                title="نسخ رقم الآيبان"
+              >
+                {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3 text-slate-500" />}
+                <span>{copied ? 'تم النسخ' : 'نسخ'}</span>
+              </button>
             </div>
           )}
 
