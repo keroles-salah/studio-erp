@@ -519,11 +519,11 @@ export default function InvoiceDetail() {
               </div>
             )}
             {/* Studio Contact Info Row */}
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-slate-500 print:text-[8.5px]">
+            <div dir="ltr" className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-slate-500 print:text-[8.5px]">
               {data.studio.phone && (
                 <span className="flex items-center gap-1">
                   <Phone className="h-2.5 w-2.5 text-slate-400" />
-                  <bdi dir="ltr">{data.studio.phone}</bdi>
+                  <span>{data.studio.phone}</span>
                 </span>
               )}
               {data.studio.email && (
@@ -531,14 +531,14 @@ export default function InvoiceDetail() {
                   <span className="text-slate-300 select-none">·</span>
                   <span className="flex items-center gap-1">
                     <Mail className="h-2.5 w-2.5 text-slate-400" />
-                    <bdi dir="ltr">{data.studio.email}</bdi>
+                    <span>{data.studio.email}</span>
                   </span>
                 </>
               )}
               {data.studio.website && (
                 <>
                   <span className="text-slate-300 select-none">·</span>
-                  <bdi dir="ltr" className="text-primary-600 font-medium">{data.studio.website}</bdi>
+                  <span className="text-primary-600 font-medium">{data.studio.website}</span>
                 </>
               )}
               {data.studio.address && (
@@ -546,7 +546,7 @@ export default function InvoiceDetail() {
                   <span className="text-slate-300 select-none">·</span>
                   <span className="flex items-center gap-1">
                     <MapPin className="h-2.5 w-2.5 text-slate-400" />
-                    <span>{data.studio.address}</span>
+                    <span dir="rtl">{data.studio.address}</span>
                   </span>
                 </>
               )}
@@ -656,23 +656,23 @@ export default function InvoiceDetail() {
                   <CalendarDays className="h-3.5 w-3.5 text-primary-600" />
                   <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-700">تفاصيل الحجز · Booking</h3>
                 </div>
-                <div className="space-y-0.5 text-[11px] print:text-[9.5px] text-slate-600">
-                  <p className="flex items-center justify-between">
+                <div dir="rtl" className="space-y-0.5 text-[11px] print:text-[9.5px] text-slate-600">
+                  <p className="flex items-center justify-between gap-2">
                     <span>رقم الحجز:</span>
                     <bdi className="font-mono text-primary-700 font-bold" dir="ltr">{data.booking.number}</bdi>
                   </p>
-                  <p className="flex items-center justify-between">
+                  <p className="flex items-center justify-between gap-2">
                     <span>نوع الفعالية:</span>
                     <strong className="text-slate-900">{getEventTypeLabel(data.booking.eventType)}</strong>
                   </p>
                   {data.booking.eventDate && (
-                    <p className="flex items-center justify-between">
+                    <p className="flex items-center justify-between gap-2">
                       <span>التاريخ:</span>
                       <strong className="text-slate-800">{formatDate(data.booking.eventDate)}</strong>
                     </p>
                   )}
                   {(data.booking.venueName || data.booking.city) && (
-                    <p className="flex items-start justify-between">
+                    <p className="flex items-start justify-between gap-2">
                       <span>المكان:</span>
                       <strong className="text-end text-slate-800 max-w-[65%] truncate">
                         {[data.booking.venueName, data.booking.city].filter(Boolean).join(' - ')}
@@ -704,7 +704,9 @@ export default function InvoiceDetail() {
                     return (
                       <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
                         <td className="px-3 py-2 font-mono text-slate-400 whitespace-nowrap">{idx + 1}</td>
-                        <td className="px-3 py-2 font-semibold text-slate-900" dir="auto">{cleanDescription}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-900 text-start">
+                          <bdi dir="auto">{cleanDescription}</bdi>
+                        </td>
                         <td className="px-3 py-2 text-center font-mono font-bold text-primary-700 whitespace-nowrap">{item.quantity}</td>
                         {!isSimplified && <td className="px-3 py-2 text-end font-mono text-slate-600 whitespace-nowrap">{formatCurrency(item.unitPrice)}</td>}
                         {!isSimplified && data.discount > 0 && (
