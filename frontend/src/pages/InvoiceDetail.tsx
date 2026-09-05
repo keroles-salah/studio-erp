@@ -896,21 +896,6 @@ export default function InvoiceDetail() {
             </div>
           )}
 
-          {/* Signature & Stamp Section (Print Only) */}
-          <div className="hidden print:grid grid-cols-2 gap-6 pt-4 mt-2 border-t border-dashed border-slate-300">
-            <div className="text-center space-y-1">
-              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">توقيع العميل المعتمد</p>
-              <p className="text-[8.5px] text-slate-400">Authorized Client Signature</p>
-              <div className="mt-3 border-b border-slate-400 mx-4" style={{ height: '40px' }} />
-              <p className="text-[8px] text-slate-500 mt-1">الاسم: ................................</p>
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">ختم وتوقيع المنشأة</p>
-              <p className="text-[8.5px] text-slate-400">Company Stamp & Signature</p>
-              <div className="mt-3 border-b border-slate-400 mx-4" style={{ height: '40px' }} />
-              <p className="text-[8px] text-slate-500 mt-1">{data.studio.name}</p>
-            </div>
-          </div>
 
           {/* Official Footer */}
           <div className="border-t border-slate-200 pt-2.5 space-y-1 print:pt-1">
