@@ -560,10 +560,10 @@ export default function InvoiceDetail() {
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5 mb-1.5">
                 <div>
                   <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                    {isSimplified ? 'فاتورة العميل الرسمية' : 'فاتورة ضريبية'}
+                    {isSimplified ? 'فاتورة العميل الرسمية' : 'فاتورة رسمية'}
                   </h2>
                   <span className="text-[9px] font-bold text-slate-400" dir="ltr">
-                    {isSimplified ? 'CLIENT INVOICE' : 'TAX INVOICE'}
+                    {isSimplified ? 'CLIENT INVOICE' : 'OFFICIAL INVOICE'}
                   </span>
                 </div>
                 <span
@@ -585,12 +585,6 @@ export default function InvoiceDetail() {
                   <span className="text-slate-500">تاريخ الإصدار:</span>
                   <span className="font-semibold text-slate-800">{formatDate(data.date)}</span>
                 </div>
-                {data.dueDate && (
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">تاريخ الاستحقاق:</span>
-                    <span className="font-semibold text-slate-800">{formatDate(data.dueDate)}</span>
-                  </div>
-                )}
               </div>
             </div>
 
